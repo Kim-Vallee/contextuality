@@ -76,3 +76,27 @@ class HVM(AHVM):
 
         self.HVM_bound = prob.value
         return {"opt_sol": h.value, "HVM_bound": prob.value}
+
+
+if __name__ == '__main__':
+    X = [i for i in range(5)]
+    M = [[i, i + 1] for i in range(4)] + [[4, 0]]
+    O = [0, 1]
+    kcbs = MeasurementScenario(X, M, O)
+
+    meas = np.zeros((5, 2, 3, 3))  # shape = number mesurements, number of outcomes, dimension of state (d x d)
+    N = 1 / np.sqrt(1 + np.cos(np.pi / 5))
+    for i in range(5):
+        vec = N * np.array([np.cos(4 * np.pi * i / 5), np.sin(4 * np.pi * i / 5), np.sqrt(np.cos(np.pi / 5))])
+        meas[i][1] = np.outer(vec, vec)
+        meas[i][0] = np.eye(3) - meas[i][1]
+
+    psi = np.array([0, 0, 1])
+    rho = np.outer(psi, psi)
+
+    empirical_model = kcbs.quantum_realization(rho, meas)
+
+    signal = HVM(kcbs)
+    signal.V_polytope()
+    result_signal = signal.compute_NCF(solver='MOSEK', verbose=False)
+    print(result_signal['CF'])
