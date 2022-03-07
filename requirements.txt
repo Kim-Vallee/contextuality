@@ -1,0 +1,4 @@
+cvxpy
+mosek
+notebook
+matplotlib
