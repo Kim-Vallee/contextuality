@@ -2,3 +2,4 @@ cvxpy
 mosek
 notebook
 matplotlib
+numpy

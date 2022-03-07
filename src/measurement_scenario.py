@@ -10,7 +10,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"Contextual scenario for Contextual Fraction"
+"""Contextual scenario for Contextual Fraction"""
 
 from typing import List, Dict, Optional
 
@@ -19,17 +19,18 @@ from numpy import ndarray
 import numpy as np
 import itertools
 
-class MeasurementScenario():
+
+class MeasurementScenario:
     r"""
     Class for Contextual Scenario. Includes method to compute the Contextual Fraction.
     """
 
     def __init__(self,
-        X: List[int],
-        M: List[List[int]],
-        O: List[int],
-        empirical_model: Optional[ndarray] = None,
-        ) -> None:
+                 X: List[int],
+                 M: List[List[int]],
+                 O: List[int],
+                 empirical_model: Optional[ndarray] = None,
+                 ) -> None:
         r"""
         Initialize the measurement scenario.
         Args:
@@ -50,14 +51,14 @@ class MeasurementScenario():
             self.empirical_model = empirical_model
 
     def quantum_realization(self,
-        rho: ndarray, 
-        meas: ndarray,
-        ) -> ndarray:
+                            rho: ndarray,
+                            meas: ndarray,
+                            ) -> ndarray:
         r"""
         Compute an empirical model/behavior from a provided quantum realization.
 
         Args:
-            state: The quantum state density matrix.
+            rho: The quantum state density matrix.
             meas: The measurements in a ndarray. The index are "measurement label", "outcome" to access a specific measurement PVM. For instance, meas[0,0] accesses the PVM for measurement with label X[0] and outcome O[0] respectively.
         Returns:
             The empirical model in a ndarray. All probability distributions over contexts are stored in a flatten ndarray.
@@ -74,7 +75,7 @@ class MeasurementScenario():
             for outcome in outcomes:
                 # Compute the measurement operator for the specific outcome.
                 P = np.eye(rho.shape[0])
-                for ind,o in enumerate(outcome):
+                for ind, o in enumerate(outcome):
                     P = P @ self._meas[ind][o]
                 empirical_model.append(np.trace(P @ self._rho))
 
@@ -82,9 +83,9 @@ class MeasurementScenario():
         return self.empirical_model
 
     def CF_bound(self,
-        sigma: float,
-        eta: float,
-        ) -> float:
+                 sigma: float,
+                 eta: float,
+                 ) -> float:
         r"""
         Compute the Contextual Fraction bound.
         Args:
@@ -94,12 +95,12 @@ class MeasurementScenario():
             The Contextual Fraction bound.
         """
 
-        return eta/(1-sigma) + 2 * len(self.M) * sigma
+        return eta / (1 - sigma) + 2 * len(self.M) * sigma
 
     def compute_NCF(self,
-        solver: Optional[str] = 'MOSEK',
-        verbose: bool = True,
-        ) -> Dict[str,float]:
+                    solver: Optional[str] = 'MOSEK',
+                    verbose: bool = True,
+                    ) -> Dict[str, float]:
         r"""
         Solve the LP problem for Non-Contextual Fraction (NCF).
         Args:   
@@ -110,13 +111,14 @@ class MeasurementScenario():
         """
 
         if self.empirical_model is None:
-            raise ValueError("No empirical model is provided. Use the method quantum_realization to compute one or provide one at initialization.")
-    
+            raise ValueError(
+                "No empirical model is provided. Use the method quantum_realization to compute one or provide one at initialization.")
+
         outcomes_global = list(itertools.product(self.O, repeat=len(self.X)))
         n = len(outcomes_global)
 
         b = cp.Variable(n)
-    
+
         # Build the incidence matrix.
         M = []
         for context in self.M:
@@ -127,10 +129,10 @@ class MeasurementScenario():
                     if [o[i] for i in context] == list(outcome):
                         row.append(1)
                     else:
-                        row.append(0)    
+                        row.append(0)
                 M.append(row)
         M = np.array(M)
- 
+
         # Define problem and solve it.
         constraints = [b >= 0]
         constraints += [M @ b <= self.empirical_model]
