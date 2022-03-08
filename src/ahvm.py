@@ -34,10 +34,28 @@ class AHVM(ABC):
         self.M = CS.M
         self.O = CS.O
         self.D = None
+        self.outcomes_global = list(itertools.product(self.O, repeat=len(self.X)))
+        self.incidence_matrix = None
+        self._build_incidence_matrix()
 
     @abstractmethod
     def V_polytope(self) -> None:
         pass
+
+    def _build_incidence_matrix(self):
+        # Build the incidence matrix.
+        M = []
+        for context in self.M:
+            outcomes_context = itertools.product(self.O, repeat=len(context))
+            for outcome in outcomes_context:
+                row = []
+                for o in self.outcomes_global:
+                    if [o[i] for i in context] == list(outcome):
+                        row.append(1)
+                    else:
+                        row.append(0)
+                M.append(row)
+        self.incidence_matrix = np.array(M)
 
     def compute_NCF(self,
                     solver: Optional[str] = 'MOSEK',
@@ -52,33 +70,18 @@ class AHVM(ABC):
             Dict, the result of the LP problem.
         """
 
-        outcomes_global = list(itertools.product(self.O, repeat=len(self.X)))
-        n = len(outcomes_global)
+        n = len(self.outcomes_global)
 
         b = cp.Variable(n)
 
-        # Build the incidence matrix.
-        M = []
-        for context in self.M:
-            outcomes_context = itertools.product(self.O, repeat=len(context))
-            for outcome in outcomes_context:
-                row = []
-                for o in outcomes_global:
-                    if [o[i] for i in context] == list(outcome):
-                        row.append(1)
-                    else:
-                        row.append(0)
-                M.append(row)
-        M = np.array(M)
-
-        h = cp.Variable(self.D.shape[1], nonneg=True)
+        # h = cp.Variable(self.D.shape[1], nonneg=True)
         c = cp.Variable(self.D.shape[0], nonneg=True)
+
+        empirical_model = self.D.T @ c
 
         # Define problem and solve it.
         constraints = [b >= 0]
-        constraints += [M @ b <= h]
-        constraints += [h >= 0]
-        constraints += [h == self.D.T @ c]
+        constraints += [self.incidence_matrix @ b <= empirical_model]
         constraints += [cp.sum(c) == 1]
         constraints += [c >= 0]
 
@@ -87,3 +90,5 @@ class AHVM(ABC):
 
         self.NCF = prob.value
         return {"opt_sol": b.value, "NCF": prob.value, "CF": 1 - prob.value}
+
+

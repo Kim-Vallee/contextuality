@@ -3,3 +3,4 @@ mosek
 notebook
 matplotlib
 numpy
+scipy

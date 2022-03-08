@@ -50,6 +50,9 @@ class MeasurementScenario:
         else:
             self.empirical_model = empirical_model
 
+        self.incidence_matrix = None
+        self.outcomes_global = list(itertools.product(self.O, repeat=len(self.X)))
+
     def quantum_realization(self,
                             rho: ndarray,
                             meas: ndarray,
@@ -82,6 +85,9 @@ class MeasurementScenario:
         self.empirical_model = np.array(empirical_model)
         return self.empirical_model
 
+    def change_empirical_model(self, _empirical_model):
+        self.empirical_model = np.array(_empirical_model).flatten()
+
     def CF_bound(self,
                  sigma: float,
                  eta: float,
@@ -96,6 +102,20 @@ class MeasurementScenario:
         """
 
         return eta / (1 - sigma) + 2 * len(self.M) * sigma
+
+    def _build_incidence_matrix(self):
+        M = []
+        for context in self.M:
+            outcomes_context = itertools.product(self.O, repeat=len(context))
+            for outcome in outcomes_context:
+                row = []
+                for o in self.outcomes_global:
+                    if [o[i] for i in context] == list(outcome):
+                        row.append(1)
+                    else:
+                        row.append(0)
+                M.append(row)
+        self.incidence_matrix = np.array(M)
 
     def compute_NCF(self,
                     solver: Optional[str] = 'MOSEK',
@@ -114,31 +134,35 @@ class MeasurementScenario:
             raise ValueError(
                 "No empirical model is provided. Use the method quantum_realization to compute one or provide one at initialization.")
 
-        outcomes_global = list(itertools.product(self.O, repeat=len(self.X)))
-        n = len(outcomes_global)
+        n = len(self.outcomes_global)
 
         b = cp.Variable(n)
 
         # Build the incidence matrix.
-        M = []
-        for context in self.M:
-            outcomes_context = itertools.product(self.O, repeat=len(context))
-            for outcome in outcomes_context:
-                row = []
-                for o in outcomes_global:
-                    if [o[i] for i in context] == list(outcome):
-                        row.append(1)
-                    else:
-                        row.append(0)
-                M.append(row)
-        M = np.array(M)
+        if self.incidence_matrix is None:
+            self._build_incidence_matrix()
 
         # Define problem and solve it.
         constraints = [b >= 0]
-        constraints += [M @ b <= self.empirical_model]
+        constraints += [self.incidence_matrix @ b <= self.empirical_model]
 
         prob = cp.Problem(cp.Maximize(np.ones(n).T @ b), constraints)
         prob.solve(solver=solver, verbose=verbose)
 
         self.NCF = prob.value
         return {"opt_sol": b.value, "NCF": prob.value, "CF": 1 - prob.value}
+
+
+if __name__ == '__main__':
+    X = [i for i in range(5)]
+    M = [[i, i + 1] for i in range(4)] + [[4, 0]]
+    O = [0, 1]
+    empirical_model = np.array([0., 0., 0., 1.,
+                                0., 0., 1., 0.,
+                                1., 0., 0., 0.,
+                                1., 0., 0., 0.,
+                                0., 1., 0., 0.])
+    kcbs = MeasurementScenario(X, M, O, empirical_model)
+
+    result = kcbs.compute_NCF(solver='MOSEK', verbose=False)
+    print(result['CF'])
