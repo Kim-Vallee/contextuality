@@ -16,7 +16,6 @@ from typing import List
 
 import numpy as np
 
-from src.ahvm import AHVM
 from src.measurement_scenario import MeasurementScenario
 import cvxpy as cp
 
@@ -37,13 +36,14 @@ def compute_signaling_fraction(CS: MeasurementScenario, solver: str = "MOSEK", v
             "No empirical model is provided. Use the method quantum_realization to compute one or provide one at "
             "initialization.")
 
-    # maximize \lambda (\lambda is the NS fraction)
+    # Problem formulation :
+    # Minimize d(v_e, \lambda * h_NS)
     # constraints :
     # h_NS must respect the compatibility of marginals
-    # e = \lambda h_NS + (1-\lambda) h_S
+    # v_e >= h_NS
+    # \lambda * sum(h_NS[row]) = 1
     # 0 <= lambda <= 1
 
-    nb_ctx = len(CS.M)
     outcomes = list(itertools.product(CS.O, repeat=len(CS.M[0])))
     nb_outcomes = len(outcomes)
     nb_entries = CS.empirical_model.size
@@ -101,8 +101,6 @@ def compute_signaling_fraction(CS: MeasurementScenario, solver: str = "MOSEK", v
     NSF = sum([h_NS[i].value for i in range(nb_outcomes)])
     SF = 1 - NSF
 
-
-
     return {"signaling_fraction": SF, "NS_fraction": NSF}
 
 
@@ -114,9 +112,9 @@ if __name__ == '__main__':
     # PR_box
     empirical_model = np.array([
                                 [0.5, 0, 0, 0.5],
-                                [0.5, 0, 0, 0.5],
-                                [0.5, 0, 0, 0.5],
-                                [0.1, 0.4, 0.5, 0]
+                                [3/8, 1/8, 1/8, 3/8],
+                                [3/8, 1/8, 1/8, 3/8],
+                                [1/8, 3/8, 3/8, 1/8]
                             ]).flatten()
 
     # empirical_model = np.array([
