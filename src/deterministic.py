@@ -20,6 +20,9 @@ from src.ahvm import AHVM
 from src.measurement_scenario import MeasurementScenario
 import cvxpy as cp
 
+from src.utils import EMPIRICAL_MODELS
+from matplotlib import pyplot as plt
+
 
 class ODHVM(AHVM):
     """ Outcome deterministic HVM. """
@@ -76,32 +79,22 @@ if __name__ == '__main__':
     M = [[0, 2], [0, 3], [1, 2], [1, 3]]
     O = [0, 1]
 
-    # # PR_box
-    # empirical_model = np.array([
-    #     [0.5, 0, 0, 0.5],
-    #     [0.5, 0, 0, 0.5],
-    #     [0.5, 0, 0, 0.5],
-    #     [0, 0.5, 0.5, 0],
-    # ]).flatten()
-
-    # Fully OD
-    # empirical_model = np.array([
-    #     [1/2, 0, 0, 0],
-    #     [1, 0, 0, 0],
-    #     [0.5, 0, 0, 0.5],
-    #     [1, 0, 0, 0],
-    # ]).flatten()
+    n = 10
+    ODFs = np.zeros(n)
+    space = np.linspace(0, 1, n)
 
     # CHSH
-    empirical_model = np.array([
-        [0.5, 0, 0, 0.5],
-        [3/8, 1/8, 1/8, 3/8],
-        [3/8, 1/8, 1/8, 3/8],
-        [1/8, 3/8, 3/8, 1/8]
-    ]).flatten()
+    for i, a in enumerate(space):
+        empirical_model = a * EMPIRICAL_MODELS["FD"] + (1-a) * EMPIRICAL_MODELS["PRBOX"]
 
-    chsh = MeasurementScenario(X, M, O, empirical_model)
-    OD_chsh = ODHVM(chsh)
-    OD_chsh.V_polytope()
-    result = OD_chsh.deterministic_fraction(verbose=False)
-    print(result['OD'])
+        chsh = MeasurementScenario(X, M, O, empirical_model)
+        OD_chsh = ODHVM(chsh)
+        OD_chsh.V_polytope()
+        result = OD_chsh.deterministic_fraction(verbose=False)
+        ODFs[i] = result['OD']
+
+    plt.plot(space, ODFs, '.-')
+    plt.xlabel("$a$")
+    plt.ylabel(r"$\eta$")
+    plt.title(r'Relation between the mixture and the found OD fraction')
+    plt.show()

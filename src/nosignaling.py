@@ -20,7 +20,7 @@ from src.measurement_scenario import MeasurementScenario
 import cvxpy as cp
 
 from src.utils import EMPIRICAL_MODELS
-
+import matplotlib.pyplot as plt
 
 def compute_signaling_fraction(CS: MeasurementScenario, solver: str = "MOSEK", verbose: bool = True):
     """ Computes the signaling fraction from an empirical model """
@@ -88,8 +88,8 @@ def compute_signaling_fraction(CS: MeasurementScenario, solver: str = "MOSEK", v
                 m_ctx2 = cp.Constant(0)
 
                 # Finally get the context and add the constraint
-                h_NS_ctx1 = h_NS[i*nb_outcomes: i*nb_outcomes + nb_outcomes]
-                h_NS_ctx2 = h_NS[j*nb_outcomes: j*nb_outcomes + nb_outcomes]
+                h_NS_ctx1 = h_NS[i * nb_outcomes: i * nb_outcomes + nb_outcomes]
+                h_NS_ctx2 = h_NS[j * nb_outcomes: j * nb_outcomes + nb_outcomes]
 
                 for ind1, ind2 in zip(ctx_1_indices, ctx_2_indices):
                     m_ctx1 += h_NS_ctx1[ind1]
@@ -111,10 +111,20 @@ if __name__ == '__main__':
     M = [[0, 2], [0, 3], [1, 2], [1, 3]]
     O = [0, 1]
 
-    # CHSH
-    empirical_model = EMPIRICAL_MODELS["CHSH"]
+    n = 10
+    SFs = np.zeros(n)
+    space = np.linspace(0, 1, n)
 
-    chsh = MeasurementScenario(X, M, O, empirical_model)
+    for i, a in enumerate(space):
+        empirical_model = a * EMPIRICAL_MODELS["PRBOX"] + (1 - a) * EMPIRICAL_MODELS["MS"]
+        chsh = MeasurementScenario(X, M, O, empirical_model)
+        result = compute_signaling_fraction(chsh, verbose=False)
+        SFs[i] = result["signaling_fraction"]
 
-    result = compute_signaling_fraction(chsh, verbose=False)
-    print(result['signaling_fraction'])
+    plt.plot(space, SFs, '.-')
+    plt.xlabel("$a$")
+    plt.ylabel(r"$\sigma$")
+    plt.title(r'Relation between the mixture and the found signaling fraction')
+    plt.show()
+
+
