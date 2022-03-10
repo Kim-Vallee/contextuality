@@ -93,8 +93,6 @@ class Signaling(AHVM):
                 M.append(row)
         M = np.array(M)
 
-
-
         h = cp.Variable(self.D.shape[1], nonneg=True)
         c = cp.Variable(self.D.shape[0], nonneg=True)
 
