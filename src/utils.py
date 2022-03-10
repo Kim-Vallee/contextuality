@@ -10,5 +10,32 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-""" Set of utilitary functions used across the project """
+""" Set of utilitary functions and constants used across the project """
 
+import numpy as np
+
+# --------------------------------
+# Well known empirical models
+# --------------------------------
+
+
+EMPIRICAL_MODELS = {
+    "CHSH": np.array([
+        1/2,    0,      0,      1/2,
+        3/8,    1/8,    1/8,    3/8,
+        3/8,    1/8,    1/8,    3/8,
+        1/8,    3/8,    3/8,    1/8
+    ]),
+    "PRBOX": np.array([
+        0.5,    0.,     0.,     0.5,
+        0.5,    0.,     0.,     0.5,
+        0.5,    0.,     0.,     0.5,
+        0.,     0.5,    0.5,    0.
+    ]),
+    "MS": np.array([
+        1.,     0.,     0.,     0.,
+        1.,     0.,     0.,     0.,
+        1.,     0.,     0.,     0.,
+        0.,     1.,     0.,     0.
+    ])
+}

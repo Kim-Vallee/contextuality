@@ -19,6 +19,8 @@ import numpy as np
 from src.measurement_scenario import MeasurementScenario
 import cvxpy as cp
 
+from src.utils import EMPIRICAL_MODELS
+
 
 def compute_signaling_fraction(CS: MeasurementScenario, solver: str = "MOSEK", verbose: bool = True):
     """ Computes the signaling fraction from an empirical model """
@@ -109,20 +111,8 @@ if __name__ == '__main__':
     M = [[0, 2], [0, 3], [1, 2], [1, 3]]
     O = [0, 1]
 
-    # PR_box
-    empirical_model = np.array([
-                                [0.5, 0, 0, 0.5],
-                                [3/8, 1/8, 1/8, 3/8],
-                                [3/8, 1/8, 1/8, 3/8],
-                                [1/8, 3/8, 3/8, 1/8]
-                            ]).flatten()
-
-    # empirical_model = np.array([
-    #     [1, 0, 0, 0],
-    #     [1, 0, 0, 0],
-    #     [1, 0, 0, 0],
-    #     [0, 1, 0, 0]
-    # ]).flatten()
+    # CHSH
+    empirical_model = EMPIRICAL_MODELS["CHSH"]
 
     chsh = MeasurementScenario(X, M, O, empirical_model)
 
