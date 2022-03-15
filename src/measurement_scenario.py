@@ -171,7 +171,7 @@ class MeasurementScenario:
                 "initialization.")
 
         # Problem formulation :
-        # Minimize d(v_e, \lambda * h_NS)
+        # Minimize distance (v_e, \lambda * h_NS)
         # constraints :
         # h_NS must respect the compatibility of marginals
         # v_e >= h_NS
@@ -307,6 +307,8 @@ if __name__ == '__main__':
     psi = np.array([0, 0, 1])
     rho = np.outer(psi, psi)
     empirical_model = kcbs.quantum_realization(rho, meas)
+
+    print(empirical_model)
 
     print(kcbs.compute_signaling_fraction(verbose=False))
     print(kcbs.compute_deterministic_fraction(verbose=False))
