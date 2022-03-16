@@ -76,19 +76,46 @@ class AHVM(ABC):
 
         # h = cp.Variable(self.D.shape[1], nonneg=True)
         c = cp.Variable(self.D.shape[0], nonneg=True)
+        z = cp.Variable(1, nonneg=True)
 
         empirical_model = self.D.T @ c
 
         # Define problem and solve it.
-        constraints = [b >= 0]
+        constraints = [b >= cp.Constant(0)]
         constraints += [self.incidence_matrix @ b <= empirical_model]
-        constraints += [cp.sum(c) == 1]
-        constraints += [c >= 0]
+        constraints += [cp.sum(c) == cp.Constant(1)]
+        constraints += [c >= cp.Constant(0)]
 
+        # I want to minimize the maximum of 1@b
+        # min_{empirical model} max_{b} 1@b
         prob = cp.Problem(cp.Maximize(np.ones(n).T @ b), constraints)
         prob.solve(solver=solver, verbose=verbose)
 
         self.NCF = prob.value
         return {"opt_sol": b.value, "NCF": prob.value, "CF": 1 - prob.value}
+
+    def compute_NCF_dual(self, solver: Optional[str] = 'MOSEK', verbose: bool = True) -> Dict[str, float]:
+        m = len(self.outcomes_global[0])
+
+        y = cp.Variable(m)
+
+        # h = cp.Variable(self.D.shape[1], nonneg=True)
+        c = cp.Variable(self.D.shape[0], nonneg=True)
+
+        empirical_model = self.D.T @ c
+
+        # Define problem and solve it.
+        constraints = [y >= cp.Constant(0)]
+        constraints += [self.incidence_matrix.T @ y >= 1]
+        constraints += [cp.sum(c) == cp.Constant(1)]
+        constraints += [c >= cp.Constant(0)]
+
+        # I want to minimize the maximum of 1@b
+        # min_{empirical model} max_{b} 1@b
+        prob = cp.Problem(cp.Minimize(y.T @ empirical_model), constraints)
+        prob.solve(solver=solver, verbose=verbose)
+
+        self.NCF = prob.value
+        return {"opt_sol": y.value, "NCF": prob.value, "CF": 1 - prob.value}
 
 

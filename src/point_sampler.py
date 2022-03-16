@@ -102,7 +102,6 @@ def maximum_CF(sampler: Sampler, sigma: float, eta: float) -> float:
     c = cp.Variable(sampler.NS_points.shape[0], nonneg=True)
     c_nonzero = cp.Variable(sampler.NS_points.shape[0], boolean=True)
 
-
     def normalize_constraints(*hvms):
         cstr = []
         for i in range(0, nb_elements, nb_outcomes):
@@ -119,7 +118,7 @@ def maximum_CF(sampler: Sampler, sigma: float, eta: float) -> float:
     constraints += [h == h_S + h_NS]
 
     # Maximum of signalling allowed
-    constraints += [cp.sum(h_NS[:nb_outcomes]) >= cp.Constant(1-sigma)]
+    constraints += [cp.sum(h_NS[:nb_outcomes]) >= cp.Constant(1 - sigma)]
 
     # Normalization
     constraints += normalize_constraints(h_NS, h_S)
@@ -178,8 +177,6 @@ def maximum_CF(sampler: Sampler, sigma: float, eta: float) -> float:
     constraints += [h_OD == sampler.NS_points.T @ c]
 
     # endregion
-
-
 
     return 0.5
 

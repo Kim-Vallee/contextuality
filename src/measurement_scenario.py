@@ -292,18 +292,22 @@ if __name__ == '__main__':
 
     n = 10
     ODFs = np.zeros(n)
+    CF = np.zeros(n)
     space = np.linspace(0, 1, n)
 
     # CHSH
     for i, a in enumerate(space):
-        empirical_model = a * EMPIRICAL_MODELS["FD"] + (1 - a) * EMPIRICAL_MODELS["MS"]
+        empirical_model = a * EMPIRICAL_MODELS["FD"] + (1 - a) * EMPIRICAL_MODELS["PRBOX"]
 
         chsh = MeasurementScenario(X, M, O, empirical_model)
         result = chsh.compute_deterministic_fraction(verbose=False)
-        ODFs[i] = 1-result['OD']
+        ODFs[i] = 1 - result['OD']
+        # CF[i] = 1 - np.sum(result["c"])
 
-    plt.plot(space, ODFs, '.-')
+    plt.plot(space, ODFs, '.-', label=r"$c_{OD}$")
+    # plt.plot(space, CF, '.-', label="CF")
     plt.xlabel(r"$a$")
     plt.ylabel(r"$\eta$")
     plt.title(r"$ a \cdot v^e_{OD} + (1 - a) \cdot v^e_{MS} $")
+    plt.legend()
     plt.show()

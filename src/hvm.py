@@ -98,5 +98,5 @@ if __name__ == '__main__':
 
     signal = HVM(kcbs)
     signal.V_polytope()
-    result_signal = signal.compute_NCF(solver='MOSEK', verbose=False)
+    result_signal = signal.compute_NCF_dual(solver='MOSEK', verbose=False)
     print(result_signal['CF'])
