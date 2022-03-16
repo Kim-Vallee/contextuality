@@ -16,9 +16,12 @@
 from typing import List, Dict, Optional
 
 import cvxpy as cp
+from matplotlib import pyplot as plt
 from numpy import ndarray
 import numpy as np
 import itertools
+
+from src.utils import EMPIRICAL_MODELS
 
 
 class MeasurementScenario:
@@ -283,35 +286,24 @@ class MeasurementScenario:
 
 
 if __name__ == '__main__':
-    X = [i for i in range(5)]
-    M = [[i, i + 1] for i in range(4)] + [[4, 0]]
+    X = [i for i in range(4)]
+    M = [[0, 2], [0, 3], [1, 2], [1, 3]]
     O = [0, 1]
 
-    # Adding manually and empirical model
-    # empirical_model = np.array([0., 0., 0., 1.,
-    #                             0., 0., 1., 0.,
-    #                             1., 0., 0., 0.,
-    #                             1., 0., 0., 0.,
-    #                             0., 1., 0., 0.])
+    n = 10
+    ODFs = np.zeros(n)
+    space = np.linspace(0, 1, n)
 
-    # kcbs = MeasurementScenario(X, M, O, empirical_model)
-    kcbs = MeasurementScenario(X, M, O)
+    # CHSH
+    for i, a in enumerate(space):
+        empirical_model = a * EMPIRICAL_MODELS["FD"] + (1 - a) * EMPIRICAL_MODELS["MS"]
 
-    meas = np.zeros((5, 2, 3, 3))  # shape = number mesurements, number of outcomes, dimension of state (d x d)
-    N = 1 / np.sqrt(1 + np.cos(np.pi / 5))
-    for i in range(5):
-        vec = N * np.array([np.cos(4 * np.pi * i / 5), np.sin(4 * np.pi * i / 5), np.sqrt(np.cos(np.pi / 5))])
-        meas[i][1] = np.outer(vec, vec)
-        meas[i][0] = np.eye(3) - meas[i][1]
+        chsh = MeasurementScenario(X, M, O, empirical_model)
+        result = chsh.compute_deterministic_fraction(verbose=False)
+        ODFs[i] = 1-result['OD']
 
-    psi = np.array([0, 0, 1])
-    rho = np.outer(psi, psi)
-    empirical_model = kcbs.quantum_realization(rho, meas)
-
-    print(empirical_model)
-
-    print(kcbs.compute_signaling_fraction(verbose=False))
-    print(kcbs.compute_deterministic_fraction(verbose=False))
-
-    result = kcbs.compute_NCF(solver='MOSEK', verbose=False)
-    print(result['CF'])
+    plt.plot(space, ODFs, '.-')
+    plt.xlabel(r"$a$")
+    plt.ylabel(r"$\eta$")
+    plt.title(r"$ a \cdot v^e_{OD} + (1 - a) \cdot v^e_{MS} $")
+    plt.show()
