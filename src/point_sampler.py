@@ -146,19 +146,18 @@ def maximum_CF(sampler: Sampler, sigma: float, eta: float) -> float:
                     ctx_1_indices[outcome[i_ctx1]].append(k)
                     ctx_2_indices[outcome[j_ctx2]].append(k)
 
-                m_ctx1 = cp.Constant(0)
-                m_ctx2 = cp.Constant(0)
-
                 # Finally get the context and add the constraint
-                h_NS_ctx1 = h_NS[i * nb_outcomes: i * nb_outcomes + nb_outcomes]
-                h_NS_ctx2 = h_NS[j * nb_outcomes: j * nb_outcomes + nb_outcomes]
+                h_NS_ctx1 = h_NS[i * nb_outcomes: (i + 1) * nb_outcomes]
+                h_NS_ctx2 = h_NS[j * nb_outcomes: (j + 1) * nb_outcomes]
 
                 for ind1, ind2 in zip(ctx_1_indices, ctx_2_indices):
+                    m_ctx1 = cp.Constant(0)
+                    m_ctx2 = cp.Constant(0)
                     for ind11, ind21 in zip(ind1, ind2):
                         m_ctx1 += h_NS_ctx1[ind11]
                         m_ctx2 += h_NS_ctx2[ind21]
 
-                constraints += [m_ctx1 == m_ctx2]
+                    constraints += [m_ctx1 == m_ctx2]
     # endregion
 
     # -----------------------------
