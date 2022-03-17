@@ -191,10 +191,11 @@ class MeasurementScenario:
 
         constraints += [self.empirical_model >= h_NS]
 
+        z = cp.Variable(1, nonneg=True)
+
         # Forces the normalization with respect to lambda
         for i in range(0, nb_entries, nb_outcomes):
-            for j in range(0, nb_entries, nb_outcomes):
-                constraints += [cp.sum(h_NS[i: i + nb_outcomes]) == cp.sum(h_NS[j: j + nb_outcomes])]
+            constraints += [cp.sum(h_NS[i: i + nb_outcomes]) == z]
 
         # Compatibility of marginals TODO: improve the loop perf
         for i, ctx1 in enumerate(self.M):
@@ -219,19 +220,18 @@ class MeasurementScenario:
                         ctx_1_indices[outcome[i_ctx1]].append(k)
                         ctx_2_indices[outcome[j_ctx2]].append(k)
 
-                    m_ctx1 = cp.Constant(0)
-                    m_ctx2 = cp.Constant(0)
-
                     # Finally get the context and add the constraint
-                    h_NS_ctx1 = h_NS[i * nb_outcomes: i * nb_outcomes + nb_outcomes]
-                    h_NS_ctx2 = h_NS[j * nb_outcomes: j * nb_outcomes + nb_outcomes]
+                    h_NS_ctx1 = h_NS[i * nb_outcomes: (i + 1) * nb_outcomes]
+                    h_NS_ctx2 = h_NS[j * nb_outcomes: (j + 1) * nb_outcomes]
 
                     for ind1, ind2 in zip(ctx_1_indices, ctx_2_indices):
+                        m_ctx1 = cp.Constant(0)
+                        m_ctx2 = cp.Constant(0)
                         for ind11, ind21 in zip(ind1, ind2):
                             m_ctx1 += h_NS_ctx1[ind11]
                             m_ctx2 += h_NS_ctx2[ind21]
 
-                    constraints += [m_ctx1 == m_ctx2]
+                        constraints += [m_ctx1 == m_ctx2]
 
         prob = cp.Problem(cp.Minimize(cp.sum(self.empirical_model - h_NS)), constraints)
         prob.solve(solver=solver, verbose=verbose)
@@ -291,23 +291,20 @@ if __name__ == '__main__':
     O = [0, 1]
 
     n = 10
-    ODFs = np.zeros(n)
-    CF = np.zeros(n)
+    SFs = np.zeros(n)
     space = np.linspace(0, 1, n)
 
     # CHSH
     for i, a in enumerate(space):
-        empirical_model = a * EMPIRICAL_MODELS["FD"] + (1 - a) * EMPIRICAL_MODELS["PRBOX"]
+        empirical_model = a * EMPIRICAL_MODELS["MS"] + (1 - a) * EMPIRICAL_MODELS["PRBOX"]
 
         chsh = MeasurementScenario(X, M, O, empirical_model)
-        result = chsh.compute_deterministic_fraction(verbose=False)
-        ODFs[i] = 1 - result['OD']
-        # CF[i] = 1 - np.sum(result["c"])
+        result = chsh.compute_signaling_fraction(verbose=False)
+        SFs[i] = result['SF']
 
-    plt.plot(space, ODFs, '.-', label=r"$c_{OD}$")
-    # plt.plot(space, CF, '.-', label="CF")
+    plt.plot(space, SFs, '.-', label=r"$c_{MS}$")
     plt.xlabel(r"$a$")
     plt.ylabel(r"$\eta$")
-    plt.title(r"$ a \cdot v^e_{OD} + (1 - a) \cdot v^e_{MS} $")
+    plt.title(r"$ a \cdot v^e_{MS} + (1 - a) \cdot v^e_{PRBOX} $")
     plt.legend()
     plt.show()
