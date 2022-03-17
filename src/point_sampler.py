@@ -18,7 +18,7 @@ from src.measurement_scenario import MeasurementScenario
 import numpy as np
 import cvxpy as cp
 
-EmpiricalModel = List[float]
+EmpiricalModelType = List[float]
 
 
 class Sampler:
@@ -33,7 +33,7 @@ class Sampler:
         self.NS_points = None
         self.MS_points = None
 
-    def sample_points(self, SF: float, ppl: int = 3) -> List[EmpiricalModel]:
+    def sample_points(self, SF: float, ppl: int = 3) -> List[EmpiricalModelType]:
         """
         Sample points from the signalling polytope by drawing lines between the various NS points and S points.
 
