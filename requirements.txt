@@ -4,3 +4,5 @@ notebook
 matplotlib
 numpy
 scipy
+polytope
+sympy
