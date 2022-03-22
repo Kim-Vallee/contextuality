@@ -20,8 +20,7 @@ from src.empirical_model import EmpiricalModel
 from src.measurement_scenario import MeasurementScenario
 
 import cvxpy as cp
-from polytope.quickhull import quickhull as _quickhull
-import sympy
+import cdd
 
 # --------------------------------
 # Well known empirical models
@@ -52,12 +51,6 @@ EMPIRICAL_MODELS = {
         1., 0., 0., 0.
     ]),
 }
-
-
-def quickhull(POINTS, abs_tol=1e-7):
-    # Little overhead to have matrix independance before
-    _, inds = sympy.Matrix(POINTS).T.rref()
-    return _quickhull(POINTS[inds, :], abs_tol=abs_tol)
 
 
 def NC_polytope(MS: MeasurementScenario) -> np.ndarray:
@@ -255,14 +248,16 @@ def compute_max_CF(MS: MeasurementScenario, solver: Optional[str] = "MOSEK",
     outcomes = list(itertools.product(O, repeat=len(MS.M[0])))
     nb_outcomes = len(outcomes)
     nb_contexts = len(MS.M)
-    # NC polytope for h
-    D = NC_polytope(MS)
-    A, b, vert = quickhull(D)
 
-    # b = cp.Variable(n, nonneg=True)
-    z = cp.Variable(1)
+    D = NC_polytope(MS)
+    mat = cdd.Matrix(D)
+    mat.rep_type = cdd.RepType.GENERATOR
+    poly = cdd.Polyhedron(mat)
+    ineq = np.array(poly.get_inequalities())
+
     # Any point in the NS polytope
-    ve = cp.Variable(len(MS.X) * nb_outcomes, nonneg=True)
+    nb_entries = len(MS.M) * nb_outcomes
+    ve = cp.Variable(nb_entries, nonneg=True)
 
     # Coefficients for convex combination
     # x = cp.Variable(D.shape[0], nonneg=True)
@@ -270,6 +265,7 @@ def compute_max_CF(MS: MeasurementScenario, solver: Optional[str] = "MOSEK",
     # Any point in the NC polytope
     # h = cp.Variable(len(MS.X) * nb_outcomes, nonneg=True)
 
+    # region CONSTRAINTS
     # Define problem and solve it.
     constraints = compatibility_of_marginals_constraints(MS, ve)
 
@@ -277,16 +273,19 @@ def compute_max_CF(MS: MeasurementScenario, solver: Optional[str] = "MOSEK",
     for i in range(0, nb_contexts):
         constraints += [cp.sum(ve[i * nb_outcomes: (i + 1) * nb_outcomes]) == cp.Constant(1)]
 
+    # endregion
+
     # Convex => sum to one
     # constraints += [cp.sum(x) == cp.Constant(1)]
+    max_violation = 0
+    max_violation_vector = np.zeros(nb_entries)
+    for i in range(ineq.shape[0]):
+        prob = cp.Problem(cp.Minimize((ineq @ ve)[i]), constraints)
+        prob.solve(solver=solver, verbose=verbose)
+        if prob.value < -0.1:
+            print(ve.value)
+        if prob.value < max_violation:
+            max_violation = prob.value
+            max_violation_vector[:] = ve.value
 
-    # Distance in LP is not a piece of cake
-    # Works only if highly symmetric
-
-    for h_NC in D:
-        constraints += [z <= cp.sum(h_NC - ve)]
-
-    prob = cp.Problem(cp.Maximize(z), constraints)
-    prob.solve(solver=solver, verbose=verbose)
-
-    return {"EmpiricalModel": EmpiricalModel(MS, ve.value), "distance": z.value}
+    return {"EmpiricalModel": EmpiricalModel(MS, max_violation_vector), "max_violation": max_violation}
