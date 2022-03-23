@@ -17,7 +17,7 @@ from typing import Optional, Iterable
 
 import numpy as np
 
-from src.measurement_scenario import MeasurementScenario
+from src.CF.measurement_scenario import MeasurementScenario
 
 
 class EmpiricalModel:

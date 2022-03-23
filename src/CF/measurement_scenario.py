@@ -76,8 +76,8 @@ class MeasurementScenario:
 
 
 if __name__ == '__main__':
-    from src.empirical_model import EmpiricalModel
-    from src.utils import EMPIRICAL_MODELS, compute_signaling_fraction
+    from src.CF.empirical_model import EmpiricalModel
+    from src.CF.utils import EMPIRICAL_MODELS, compute_signaling_fraction
 
     X = [i for i in range(4)]
     M = [[0, 2], [0, 3], [1, 2], [1, 3]]
