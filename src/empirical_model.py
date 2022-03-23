@@ -30,7 +30,14 @@ class EmpiricalModel:
         self.measurement_scenario = measurement_scenario
 
     @property
-    def vector(self):
+    def vector(self) -> np.ndarray:
+        """
+        Accessor of the internal vectorial representation.
+
+        :raises AttributeError: When no vector has been attributed yet.
+        :return: The vector representation.
+        :rtype: np.ndarray
+        """
         if self._vector is None:
             raise AttributeError("The empirical model is not defined. Please call the method quantum_realisation or "
                                  "set the attribute vector")
@@ -38,8 +45,14 @@ class EmpiricalModel:
         return self._vector
 
     @vector.setter
-    def vector(self, new_empirical_model: Iterable):
-        self._vector = np.array(new_empirical_model).flatten()
+    def vector(self, new_vector: Iterable):
+        """
+        Vector form of the empirical model.
+
+        :param new_vector: the new empirical model vector.
+        :type new_vector: Iterable
+        """
+        self._vector = np.array(new_vector).flatten()
 
     def quantum_realisation(self, rho, meas) -> None:
         r"""
@@ -48,11 +61,9 @@ class EmpiricalModel:
         :param rho:     The quantum state density matrix.
         :type rho:      np.ndarray
         :param meas:    The measurements in a ndarray. The index are "measurement label", "outcome" to access
-                        a specific measurement PVM. For instance, meas[0,0] accesses the PVM
-                        for measurement with label X[0] and outcome O[0] respectively.
+                        a specific measurement PVM. For instance, meas[0,0] accesses the PVM for measurement
+                        with label X[0] and outcome O[0] respectively.
         :type meas:     np.ndarray
-        :param MS:      Measurement Scenario having the Measurement Settings and Outcomes
-        :type MS:       MeasurementScenario
         """
 
         # Get parameters

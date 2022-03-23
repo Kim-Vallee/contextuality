@@ -12,7 +12,7 @@
 
 """ Set of utilitary functions and constants used across the project """
 import itertools
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple, Union
 
 import numpy as np
 
@@ -22,38 +22,19 @@ from src.measurement_scenario import MeasurementScenario
 import cvxpy as cp
 import cdd
 
-# --------------------------------
-# Well known empirical models
-# --------------------------------
-EMPIRICAL_MODELS = {
-    "CHSH": np.array([
-        1 / 2, 0, 0, 1 / 2,
-        3 / 8, 1 / 8, 1 / 8, 3 / 8,
-        3 / 8, 1 / 8, 1 / 8, 3 / 8,
-        1 / 8, 3 / 8, 3 / 8, 1 / 8
-    ]),
-    "PRBOX": np.array([
-        0.5, 0., 0., 0.5,
-        0.5, 0., 0., 0.5,
-        0.5, 0., 0., 0.5,
-        0., 0.5, 0.5, 0.
-    ]),
-    "MS": np.array([
-        1., 0., 0., 0.,
-        1., 0., 0., 0.,
-        1., 0., 0., 0.,
-        0., 1., 0., 0.
-    ]),
-    "FD": np.array([
-        1., 0., 0., 0.,
-        1., 0., 0., 0.,
-        1., 0., 0., 0.,
-        1., 0., 0., 0.
-    ]),
-}
 
+def NC_polytope(MS: MeasurementScenario, representation: str = "V") \
+        -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
+    """
+    Polytope for the Non-Contextual set.
 
-def NC_polytope(MS: MeasurementScenario) -> np.ndarray:
+    :param MS: Measurement Scenario that is associated to that polytope.
+    :type MS: MeasurementScenario
+    :param representation: Representation expected as a return.
+    :type representation: "V", "H" or "BOTH"
+    :return: The polytope with lines forming the extremal points.
+    :rtype: np.ndarray
+    """
     X, M, O = MS.X, MS.M, MS.O
     outcomes_assignements = list(itertools.product([0, 1], repeat=len(X)))
     D = []
@@ -68,10 +49,30 @@ def NC_polytope(MS: MeasurementScenario) -> np.ndarray:
                     d.append(0)
         D.append(d)
 
-    return np.array(D)
+    D = np.array(D)
+    if representation == "V":
+        return D
+    mat = cdd.Matrix(D)
+    mat.rep_type = cdd.RepType.GENERATOR
+    poly = cdd.Polyhedron(mat)
+    H = np.array(poly.get_inequalities())
+    if representation == "H":
+        return H
+
+    return D, H
 
 
-def compatibility_of_marginals_constraints(MS: MeasurementScenario, hvm: cp.Variable):
+def compatibility_of_marginals_constraints(MS: MeasurementScenario, EM_vector: cp.Variable) -> List:
+    """
+    Generate compatibility of marginals constraints on an empirical model vector as a Variable of cvxpy.
+
+    :param MS: Measurement scenario associated to the empirical model vector.
+    :type MS: MeasurementScenario
+    :param EM_vector: Empirical Model vectorial representation.
+    :type EM_vector: cp.Variable
+    :return: A list of constraints on EM_vector to respect the compatibility of marginals.
+    :rtype: List
+    """
     O, M = MS.O, MS.M
     outcomes = list(itertools.product(O, repeat=len(M[0])))
     nb_outcomes = len(outcomes)
@@ -82,7 +83,7 @@ def compatibility_of_marginals_constraints(MS: MeasurementScenario, hvm: cp.Vari
             if ctx1 == ctx2:
                 continue
             # Also counting same elements, useless
-            intersection = np.intersect1d(ctx1, ctx2)
+            intersection = np.intersect1d(ctx1, ctx2, return_indices=False)
             if intersection.size > 0:
                 # Note the intersection value (is it A0, A1 ...)
                 intersection_value = int(intersection[0])
@@ -100,8 +101,8 @@ def compatibility_of_marginals_constraints(MS: MeasurementScenario, hvm: cp.Vari
                     ctx_2_indices[outcome[j_ctx2]].append(k)
 
                 # Finally get the context and add the constraint
-                h_NS_ctx1 = hvm[i * nb_outcomes: (i + 1) * nb_outcomes]
-                h_NS_ctx2 = hvm[j * nb_outcomes: (j + 1) * nb_outcomes]
+                h_NS_ctx1 = EM_vector[i * nb_outcomes: (i + 1) * nb_outcomes]
+                h_NS_ctx2 = EM_vector[j * nb_outcomes: (j + 1) * nb_outcomes]
 
                 for ind1, ind2 in zip(ctx_1_indices, ctx_2_indices):
                     m_ctx1 = cp.Constant(0)
@@ -113,16 +114,21 @@ def compatibility_of_marginals_constraints(MS: MeasurementScenario, hvm: cp.Vari
                     constraints += [m_ctx1 == m_ctx2]
     return constraints
 
+
 def compute_deterministic_fraction(empirical_model: EmpiricalModel,
-                                   solver: str = "MOSEK", verbose: bool = True):
+                                   solver: str = "MOSEK", verbose: bool = False) -> Dict[str, float]:
     """
     The compute_deterministic_fraction function computes the deterministic fraction of a given empirical model.
     The function takes as input an EmpiricalModel object and returns the value of its deterministic fraction.
 
-    :param empirical_model:EmpiricalModel: Used to Compute the deterministic fraction.
-    :param solver:str="MOSEK": Used to Specify the solver to be used.
-    :param verbose:bool=True: Used to Display the computation details.
-    :return: The value of the deterministic fraction.
+    :param empirical_model: The empirical model that describes the experiment.
+    :type empirical_model: EmpiricalModel
+    :param solver: Used to Specify the solver to be used. Defaults to Mosek.
+    :type solver: str
+    :param verbose: Used to Display the computation details. Defaults to False.
+    :type verbose: bool
+    :return: The value of the deterministic fraction and its opposite
+    :rtype: Dict[str, float]
     """
     ve = empirical_model.vector
     D = NC_polytope(empirical_model.measurement_scenario)
@@ -142,8 +148,19 @@ def compute_deterministic_fraction(empirical_model: EmpiricalModel,
 
 
 def compute_signaling_fraction(empirical_model: EmpiricalModel,
-                               solver: str = "MOSEK", verbose: bool = True):
-    """ Computes the signaling fraction from an empirical model and a MeasurementScenario """
+                               solver: str = "MOSEK", verbose: bool = False) -> Dict[str, float]:
+    """
+    Computes the signaling fraction from an empirical model and a MeasurementScenario.
+
+    :param empirical_model: The empirical model that describes the experiment.
+    :type empirical_model: EmpiricalModel
+    :param solver: Solver for cvxpy. Defaults to "MOSEK".
+    :type solver: str
+    :param verbose: Whether the solver should verbose. Defaults to False.
+    :type verbose: bool
+    :return: Signalling and non-signalling fractions
+    :rtype: Dict[str, float]
+    """
 
     # The idea is to try to describe the empirical model
     # as a decomposition of no-signaling and signaling
@@ -194,7 +211,19 @@ def compute_signaling_fraction(empirical_model: EmpiricalModel,
 
 
 def compute_NCF(empirical_model: EmpiricalModel,
-                solver: Optional[str] = 'MOSEK', verbose: bool = True) -> Dict[str, float]:
+                solver: Optional[str] = 'MOSEK', verbose: bool = False) -> Dict[str, float]:
+    """
+    Compute the Non-Contextual Fraction (NCF) of an empirical model.
+
+    :param empirical_model: Empirical model describing the experiment.
+    :type empirical_model: EmpiricalModel
+    :param solver: The solver used for cvxpy. Defaults to "MOSEK".
+    :type solver: str
+    :param verbose: Whether the solver should verbose. Defaults to False.
+    :type verbose: bool
+    :return: The NCF, CF and the optimal description by NC model.
+    :rtype: Dict[str, float]
+    """
     MS = empirical_model.measurement_scenario
     ve = empirical_model.vector
 
@@ -220,14 +249,19 @@ def compute_NCF(empirical_model: EmpiricalModel,
 def compute_max_CF(MS: MeasurementScenario, sigma: float, eta: float, solver: Optional[str] = "MOSEK",
                    verbose: Optional[bool] = False) -> Dict[str, Any]:
     """
-    LP to find the maximum distance between two empirical models. WARNING: it may be long AFAIK.
+    LP to find the maximum distance between two empirical models.
 
     :param MS: The measurement scenario in which we try to find the maximum CF.
     :type MS: MeasurementScenario
+    :param sigma: Parameter dependence fraction.
+    :type sigma: float
+    :param eta: Outcome nondeterminism fraction.
     :param solver: The solver used for the LP. Defaults to 'MOSEK'.
     :type solver: str
     :param verbose: Whether the solver should verbose. Defaults to False.
     :type verbose: bool
+    :return: The empirical model that violates at most the inequality and the violation.
+    :rtype: Dict[str, Any]
     """
     # Non-signalling case
     O, X, M = MS.O, MS.X, MS.M
@@ -259,8 +293,8 @@ def compute_max_CF(MS: MeasurementScenario, sigma: float, eta: float, solver: Op
     def uniformity_constraint(empirical_vector: cp.Variable, uniformity: float = None) -> List:
         z = cp.Variable(1)
         cstrs = []
-        for i in range(0, nb_entries, nb_outcomes):
-            cstrs += [cp.sum(empirical_vector[i:i + nb_outcomes]) == z]
+        for k in range(0, nb_entries, nb_outcomes):
+            cstrs += [cp.sum(empirical_vector[k:k + nb_outcomes]) == z]
         if uniformity is not None:
             cstrs += [z >= cp.Constant(uniformity)]
         return cstrs

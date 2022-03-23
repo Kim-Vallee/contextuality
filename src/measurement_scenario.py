@@ -30,12 +30,15 @@ class MeasurementScenario:
                  M: List[List[int]],
                  O: List[int]
                  ) -> None:
-        r"""
+        """
         Initialize the measurement scenario.
-        Args:
-            X: Set of measurement labels. Must be a list of integers from 0 to number of measurements - 1.
-            M: Covering familly of X. Set of subsets of X. List of measurement contexts.
-            O: List of outcomes. It is assumed that all measurements have the same possible outcomes.
+
+        :param X: Set of measurement labels. Must be a list of integers from 0 to number of measurements - 1.
+        :type X: List[int]
+        :param M: Covering family of X. Set of subsets of X. List of measurement contexts.
+        :type M: List[List[int]]
+        :param O: List of outcomes. It is assumed that all measurements have the same possible outcomes.
+        :type O: List[int]
         """
 
         # Get parameters.
@@ -48,6 +51,12 @@ class MeasurementScenario:
 
     @property
     def incidence_matrix(self):
+        """
+        Accessor for the incidence matrix.
+
+        :return: the incidence matrix
+        :rtype: np.ndarray
+        """
         if self._incidence_matrix is not None:
             return self._incidence_matrix
 
