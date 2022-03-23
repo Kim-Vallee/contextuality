@@ -113,7 +113,6 @@ def compatibility_of_marginals_constraints(MS: MeasurementScenario, hvm: cp.Vari
                     constraints += [m_ctx1 == m_ctx2]
     return constraints
 
-
 def compute_deterministic_fraction(empirical_model: EmpiricalModel,
                                    solver: str = "MOSEK", verbose: bool = True):
     """
@@ -124,19 +123,6 @@ def compute_deterministic_fraction(empirical_model: EmpiricalModel,
     :param solver:str="MOSEK": Used to Specify the solver to be used.
     :param verbose:bool=True: Used to Display the computation details.
     :return: The value of the deterministic fraction.
-
-    :doc-author: Trelent
-    """
-    """
-    The compute_deterministic_fraction function computes the deterministic fraction of a given empirical model.
-    The function takes as input an EmpiricalModel object and returns the value of its deterministic fraction.
-    
-    :param empirical_model:EmpiricalModel: Used to Compute the.
-    :param solver:str="MOSEK": Used to Specify the solver to be used.
-    :param verbose:bool=True: Used to Display the computation details.
-    :return: The value of the deterministic fraction.
-    
-    :doc-author: Trelent
     """
     ve = empirical_model.vector
     D = NC_polytope(empirical_model.measurement_scenario)
@@ -231,7 +217,7 @@ def compute_NCF(empirical_model: EmpiricalModel,
     return {"opt_sol": b.value, "NCF": prob.value, "CF": 1 - prob.value}
 
 
-def compute_max_CF(MS: MeasurementScenario, solver: Optional[str] = "MOSEK",
+def compute_max_CF(MS: MeasurementScenario, sigma: float, eta: float, solver: Optional[str] = "MOSEK",
                    verbose: Optional[bool] = False) -> Dict[str, Any]:
     """
     LP to find the maximum distance between two empirical models. WARNING: it may be long AFAIK.
@@ -248,6 +234,7 @@ def compute_max_CF(MS: MeasurementScenario, solver: Optional[str] = "MOSEK",
     outcomes = list(itertools.product(O, repeat=len(MS.M[0])))
     nb_outcomes = len(outcomes)
     nb_contexts = len(MS.M)
+    nb_entries = len(MS.M) * nb_outcomes
 
     D = NC_polytope(MS)
     mat = cdd.Matrix(D)
@@ -255,15 +242,30 @@ def compute_max_CF(MS: MeasurementScenario, solver: Optional[str] = "MOSEK",
     poly = cdd.Polyhedron(mat)
     ineq = np.array(poly.get_inequalities())
 
+    # region VARIABLE DEFINITION
     # Any point in the NS polytope
-    nb_entries = len(MS.M) * nb_outcomes
     ve = cp.Variable(nb_entries, nonneg=True)
 
-    # Coefficients for convex combination
-    # x = cp.Variable(D.shape[0], nonneg=True)
+    # Decomposition into HVM
+    h_S = cp.Variable(nb_entries, nonneg=True)
+    h_NS = cp.Variable(nb_entries, nonneg=True)
+    h_OD = cp.Variable(nb_entries, nonneg=True)
+    h_ND = cp.Variable(nb_entries, nonneg=True)
 
-    # Any point in the NC polytope
-    # h = cp.Variable(len(MS.X) * nb_outcomes, nonneg=True)
+    # OD variables
+    c = cp.Variable(D.shape[0], nonneg=True)
+    c_nonzero = cp.Variable(D.shape[0], boolean=True)
+
+    def uniformity_constraint(empirical_vector: cp.Variable, uniformity: float = None) -> List:
+        z = cp.Variable(1)
+        cstrs = []
+        for i in range(0, nb_entries, nb_outcomes):
+            cstrs += [cp.sum(empirical_vector[i:i + nb_outcomes]) == z]
+        if uniformity is not None:
+            cstrs += [z >= cp.Constant(uniformity)]
+        return cstrs
+
+    # endregion
 
     # region CONSTRAINTS
     # Define problem and solve it.
@@ -273,19 +275,45 @@ def compute_max_CF(MS: MeasurementScenario, solver: Optional[str] = "MOSEK",
     for i in range(0, nb_contexts):
         constraints += [cp.sum(ve[i * nb_outcomes: (i + 1) * nb_outcomes]) == cp.Constant(1)]
 
+    # region SIGNALLING CONSTRAINS
+    constraints += [ve == h_S + h_NS]
+
+    # Maximum of signalling allowed
+    constraints += [cp.sum(h_NS[:nb_outcomes]) >= cp.Constant(1 - sigma)]
+
+    # Normalization
+    constraints += uniformity_constraint(h_NS, 1 - sigma)
+    constraints += uniformity_constraint(h_S)
+
+    # Compatibility of marginals
+    constraints += compatibility_of_marginals_constraints(MS, h_NS)
     # endregion
 
-    # Convex => sum to one
-    # constraints += [cp.sum(x) == cp.Constant(1)]
+    # region OUTCOME-DETERMINISM CONSTRAINTS
+    constraints += [ve == h_OD + h_ND]
+
+    # Normalization
+    constraints += uniformity_constraint(h_ND)
+
+    # Mixture should be strictly OD
+    constraints += [c <= c_nonzero]
+    constraints += [cp.sum(c_nonzero) == 1]
+    constraints += [cp.sum(c) >= cp.Constant(1 - eta)]
+    constraints += [h_OD == D.T @ c]
+
+    # endregion
+
+    # endregion
+
+    # region LP LOOP
     max_violation = 0
     max_violation_vector = np.zeros(nb_entries)
     for i in range(ineq.shape[0]):
         prob = cp.Problem(cp.Minimize((ineq @ ve)[i]), constraints)
         prob.solve(solver=solver, verbose=verbose)
-        if prob.value < -0.1:
-            print(ve.value)
         if prob.value < max_violation:
             max_violation = prob.value
             max_violation_vector[:] = ve.value
+    # endregion
 
     return {"EmpiricalModel": EmpiricalModel(MS, max_violation_vector), "max_violation": max_violation}
