@@ -11,16 +11,18 @@ It has many linear programs in it, that could be used for other applications.
 Via pip
 
 ``` bash
+$ python -m pip install -r requirements.txt
 $ python -m pip install .
 ```
 
 or dynamically
 
 ``` bash
+$ python -m pip install -r requirements.txt
 $ python -m pip install -e .
 ```
 
-## Usage
+## Usage example
 
 ```python
 from CF.measurement_scenario import MeasurementScenario

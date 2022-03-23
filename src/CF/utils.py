@@ -16,8 +16,8 @@ from typing import List, Optional, Dict, Any, Tuple, Union
 
 import numpy as np
 
-from src.CF.empirical_model import EmpiricalModel
-from src.CF.measurement_scenario import MeasurementScenario
+from CF.empirical_model import EmpiricalModel
+from CF.measurement_scenario import MeasurementScenario
 
 import cvxpy as cp
 import cdd
