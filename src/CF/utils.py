@@ -32,7 +32,7 @@ def NC_polytope(MS: MeasurementScenario, representation: str = "V") \
     :type MS: MeasurementScenario
     :param representation: Representation expected as a return.
     :type representation: "V", "H" or "BOTH"
-    :return: The polytope with lines forming the extremal points.
+    :return: The polytope in the form of a matrix representation H or V depending on the parameter representation.
     :rtype: np.ndarray
     """
     X, M, O = MS.X, MS.M, MS.O
@@ -270,11 +270,7 @@ def compute_max_CF(MS: MeasurementScenario, sigma: float, eta: float, solver: Op
     nb_contexts = len(MS.M)
     nb_entries = len(MS.M) * nb_outcomes
 
-    D = NC_polytope(MS)
-    mat = cdd.Matrix(D)
-    mat.rep_type = cdd.RepType.GENERATOR
-    poly = cdd.Polyhedron(mat)
-    ineq = np.array(poly.get_inequalities())
+    D, ineq = NC_polytope(MS, representation="BOTH")
 
     # region VARIABLE DEFINITION
     # Any point in the NS polytope

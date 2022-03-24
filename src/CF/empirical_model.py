@@ -24,7 +24,14 @@ class EmpiricalModel:
     """ Empirical model class, that is a simple holder for an array, and the way to generate them """
 
     def __init__(self, measurement_scenario: MeasurementScenario, empirical_model: Optional[np.ndarray] = None):
-        """ Constructor for EmpiricalModel """
+        """
+        Constructor for EmpiricalModel.
+
+        :param measurement_scenario: The measurement scenario associated to such a model.
+        :type measurement_scenario: MeasurementScenario
+        :param empirical_model: The empirical model vectorial representation. Defaults to None.
+        :type empirical_model: np.ndarray
+        """
         self._meas = None
         self._rho = None
         self._vector = empirical_model
@@ -55,7 +62,7 @@ class EmpiricalModel:
         """
         self._vector = np.array(new_vector).flatten()
 
-    def quantum_realisation(self, rho, meas) -> None:
+    def quantum_realisation(self, rho: np.ndarray, meas: np.ndarray) -> None:
         r"""
         Compute an empirical model/behavior from a provided quantum realization.
 

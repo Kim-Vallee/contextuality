@@ -21,8 +21,8 @@ import itertools
 
 
 class MeasurementScenario:
-    r"""
-    Class for Contextual Scenario. Includes method to compute the Contextual Fraction.
+    """
+    Class for Contextual Scenario.
     """
 
     def __init__(self,

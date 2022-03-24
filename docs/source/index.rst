@@ -8,10 +8,10 @@ Welcome to CF's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
-.. automodule::
-   :members:
+   modules/empirical_model
+   modules/measurement_scenario
+   modules/utils
 
 
 

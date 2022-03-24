@@ -22,6 +22,17 @@ $ python -m pip install -r requirements.txt
 $ python -m pip install -e .
 ```
 
+## Documentation
+
+The documentation can be compiled in the docs directory.
+
+```bash
+$ cd docs
+$ make html
+```
+
+then navigate to `build/html` and open `index.html` which should give you your documentation.
+
 ## Usage example
 
 ```python
