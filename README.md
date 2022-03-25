@@ -3,8 +3,8 @@
 [![Software License][ico-license]](LICENSE)
 ![Version][ico-version]
 
-This project aims at having tools to compute the contextual fraction, and various associated quantities.
-It has many linear programs in it, that could be used for other applications.
+This project aims at having tools to compute the contextual fraction, and various associated quantities. It has many
+linear programs in it, that could be used for other applications.
 
 ## Install
 
@@ -24,14 +24,15 @@ $ python -m pip install -e .
 
 ## Documentation
 
-The documentation can be compiled in the docs directory.
+The documentation can be compiled in the [docs](docs) directory.
 
 ```bash
 $ cd docs
 $ make html
 ```
 
-then navigate to `build/html` and open `index.html` which should give you your documentation.
+then navigate to [docs/build/html](docs/build/html) and open [index.html](docs/build/html/index.html) to access the
+documentation.
 
 ## Usage example
 
@@ -75,6 +76,10 @@ CF_result = compute_NCF(result['EmpiricalModel'], verbose=False)
 print(CF_result)
 ```
 
+## Notebooks
+
+Examples in the form of notebooks can be found in the [notebooks](notebooks) folder.
+
 ## Credits
 
 - [Kim Vallée](https://github.com/Kim-Vallee)
@@ -84,5 +89,6 @@ print(CF_result)
 
 The Apache 2.0 License. Please see [License File](LICENSE) for more information.
 
-[ico-version]: https://img.shields.io/badge/version-1.0-brightgreen.svg?style=flat-square
-[ico-license]: https://img.shields.io/badge/license-Apache-brightgreen.svg?style=flat-square
+[ico-version]: https://img.shields.io/badge/Version-1.0-brightgreen.svg?style=flat-square
+
+[ico-license]: https://img.shields.io/badge/License-Apache_2.0-brightgreen.svg?style=flat-square

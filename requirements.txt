@@ -5,3 +5,5 @@ matplotlib
 numpy
 scipy
 pycddlib
+Sphinx
+sphinx-rtd-theme
