@@ -14,13 +14,12 @@
 import itertools
 from typing import List, Optional, Dict, Any, Tuple, Union
 
+import cdd
+import cvxpy as cp
 import numpy as np
 
 from CF.empirical_model import EmpiricalModel
 from CF.measurement_scenario import MeasurementScenario
-
-import cvxpy as cp
-import cdd
 
 
 def NC_polytope(MS: MeasurementScenario, representation: str = "V") \
@@ -60,6 +59,37 @@ def NC_polytope(MS: MeasurementScenario, representation: str = "V") \
         return H
 
     return D, H
+
+
+def signalling_polytope(MS: MeasurementScenario) -> np.ndarray:
+    """
+    Creates the signalling polytope in V mode.
+
+    :param MS: The measurement scenario
+    :type MS: MeasurementScenario
+    :return: The points of the Signalling polytope as rows
+    :rtype: np.ndarray
+    """
+    O, X, M = MS.O, MS.X, MS.M
+
+    def permutations_without_rep(length: int):
+        for positions in map(set, itertools.combinations(range(length), length - 1)):
+            yield ''.join('10'[i in positions] for i in range(length))
+
+    D = []
+    first = True
+    for context in M:
+        outcomes = list(itertools.product(O, repeat=len(context)))
+        temp = list(permutations_without_rep(len(outcomes)))
+        if first:
+            D = temp
+            first = False
+        else:
+            D = [A + B for A in D for B in temp]
+
+    D = np.array([[int(i) for i in list(d)] for d in D])
+
+    return D
 
 
 def compatibility_of_marginals_constraints(MS: MeasurementScenario, EM_vector: cp.Variable) -> List:
