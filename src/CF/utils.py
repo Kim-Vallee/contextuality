@@ -63,7 +63,8 @@ def NC_polytope(MS: MeasurementScenario, representation: str = "V") \
 
 def signalling_polytope(MS: MeasurementScenario) -> np.ndarray:
     """
-    Creates the signalling polytope in V mode.
+    Creates the signalling polytope in V mode. All the outcomes are maximally signalling or no-signalling and
+    deterministic.
 
     :param MS: The measurement scenario
     :type MS: MeasurementScenario
@@ -377,3 +378,37 @@ def compute_max_CF(MS: MeasurementScenario, sigma: float, eta: float, solver: Op
     # endregion
 
     return {"EmpiricalModel": EmpiricalModel(MS, max_violation_vector), "max_violation": max_violation}
+
+
+def get_classical_bound_Winter(MS: MeasurementScenario, lambdas: Optional[np.ndarray] = None,
+                               allow_global: bool = False,
+                               solver: Optional[str] = "MOSEK",
+                               verbose: Optional[bool] = False) -> Dict[str, Any]:
+    """
+    Get the classical bound for the Winter model
+
+    :param MS: Measurement Scenario which we are considering.
+    :param lambdas: The lambdas used to compute the bound. If None, ones are used.
+    :param allow_global: Whether the global bound should be computed.
+    :param solver: Solver for the LP.
+    :param verbose: Whether to verbose the outputs.
+    :return: The classical bound.
+    """
+    O, X, M = MS.O, MS.X, MS.M
+    nb_projectors = len(X)
+    if lambdas is None:
+        lambdas = np.ones(nb_projectors)
+    if not allow_global:
+        Xi = cp.Variable(nb_projectors, boolean=True)
+    else:
+        Xi = cp.Variable(nb_projectors, nonneg=True)
+    constraints = []
+    for ctx in M:
+        s = cp.Constant(0)
+        for m in ctx:
+            s += Xi[m]
+        constraints += [s <= cp.Constant(1)]
+
+    prob = cp.Problem(cp.Maximize(cp.sum(cp.multiply(lambdas, Xi))), constraints)
+    prob.solve(solver=solver, verbose=verbose)
+    return {"bound": prob.value, "Xi": Xi.value}

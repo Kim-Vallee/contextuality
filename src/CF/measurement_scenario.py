@@ -12,12 +12,12 @@
 # that they have been altered from the originals.
 
 """Contextual scenario for Contextual Fraction"""
-
+import abc
+import itertools
 from typing import List
 
-from matplotlib import pyplot as plt
 import numpy as np
-import itertools
+from matplotlib import pyplot as plt
 
 
 class MeasurementScenario:
@@ -73,6 +73,28 @@ class MeasurementScenario:
                 M.append(row)
         self._incidence_matrix = np.array(M)
         return self._incidence_matrix
+
+
+class MeasurementScenarioImplementations(abc.ABC):
+    """
+    Director for many implementations of the MeasurementScenario, and to be DRY.
+    """
+
+    @staticmethod
+    def CHSH() -> MeasurementScenario:
+        """ Generates the CHSH MeasurementScenario class. """
+        O = [0, 1]
+        X = list(range(4))
+        M = [[a, b] for a in X[:2] for b in X[2:]]
+        return MeasurementScenario(X, M, O)
+
+    @staticmethod
+    def KCBS() -> MeasurementScenario:
+        """ Generates the KCBS MeasurementScenario class. """
+        X = [i for i in range(5)]
+        M = [[i, i + 1] for i in range(4)] + [[4, 0]]
+        O = [0, 1]
+        return MeasurementScenario(X, M, O)
 
 
 if __name__ == '__main__':
