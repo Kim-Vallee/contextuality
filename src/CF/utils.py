@@ -380,25 +380,32 @@ def compute_max_CF(MS: MeasurementScenario, sigma: float, eta: float, solver: Op
     return {"EmpiricalModel": EmpiricalModel(MS, max_violation_vector), "max_violation": max_violation}
 
 
-def get_classical_bound_Winter(MS: MeasurementScenario, lambdas: Optional[np.ndarray] = None,
-                               allow_global: bool = False,
-                               solver: Optional[str] = "MOSEK",
-                               verbose: Optional[bool] = False) -> Dict[str, Any]:
+def get_bound_Winter(MS: MeasurementScenario, lambdas: Optional[np.ndarray] = None,
+                     bound_type: Optional[str] = "classical",
+                     epsilon: Optional[float] = 0,
+                     solver: Optional[str] = "MOSEK",
+                     verbose: Optional[bool] = False) -> Dict[str, Any]:
     """
-    Get the classical bound for the Winter model
+    Get the bound for the Winter model
 
     :param MS: Measurement Scenario which we are considering.
     :param lambdas: The lambdas used to compute the bound. If None, ones are used.
-    :param allow_global: Whether the global bound should be computed.
+    :param bound_type: Which type of bound to compute.
+    :param epsilon: The epsilon given in Winter's paper.
     :param solver: Solver for the LP.
     :param verbose: Whether to verbose the outputs.
     :return: The classical bound.
     """
+    assert bound_type in ["classical", "global"],\
+        "Type of bound not recognized. Allowed values are classical and global."
+
     O, X, M = MS.O, MS.X, MS.M
+
     nb_projectors = len(X)
     if lambdas is None:
         lambdas = np.ones(nb_projectors)
-    if not allow_global:
+
+    if bound_type == "classical":
         Xi = cp.Variable(nb_projectors, boolean=True)
     else:
         Xi = cp.Variable(nb_projectors, nonneg=True)
@@ -411,4 +418,14 @@ def get_classical_bound_Winter(MS: MeasurementScenario, lambdas: Optional[np.nda
 
     prob = cp.Problem(cp.Maximize(cp.sum(cp.multiply(lambdas, Xi))), constraints)
     prob.solve(solver=solver, verbose=verbose)
-    return {"bound": prob.value, "Xi": Xi.value}
+
+    if bound_type == "classical" and epsilon > 0:
+        classical_bound = prob.value
+        all_contexts = np.array(M).flatten()
+        k_i = np.array([np.sum(all_contexts == i) for i in range(nb_projectors)])
+        upper_bound = classical_bound + epsilon * np.sum(lambdas * (k_i - 1))
+        return {"classical_bound": classical_bound, "upper_bound": upper_bound, "Xi": Xi.value}
+    elif bound_type == "global":
+        return {"global_bound": prob.value, "Xi": Xi.value}
+
+    return {"classical_bound": prob.value, "Xi": Xi.value}
