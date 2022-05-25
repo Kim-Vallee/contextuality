@@ -42,6 +42,7 @@ class MeasurementScenario:
         """
 
         # Get parameters.
+        self._incidence_matrix_constrained = None
         self.X = X
         self.M = M
         self.O = O
@@ -73,6 +74,46 @@ class MeasurementScenario:
                 M.append(row)
         self._incidence_matrix = np.array(M)
         return self._incidence_matrix
+
+    @property
+    def incidence_matrix_constrained(self):
+        """
+        Accessor for an incidence matrix that takes into account incompatible measurements.
+
+        :return: the incidence matrix
+        :rtype: np.ndarray
+        """
+        if self._incidence_matrix_constrained is not None:
+            return self._incidence_matrix_constrained
+
+        # Filter the global outcomes to only those where the measurements are compatible.
+        def check_assignement(assignment):
+            respects = True
+            for ctx in self.M:
+                s = 0
+                for v in ctx:
+                    s += assignment[v]
+                if s > 1:
+                    respects = False
+                    break
+            return respects
+
+        restricted_global_outcomes = list(filter(check_assignement, self.outcomes_global))
+
+        M = []
+        for context in self.M:
+            outcomes_context = itertools.product(self.O, repeat=len(context))
+            for outcome in outcomes_context:
+                row = []
+                for o in restricted_global_outcomes:
+                    if [o[i] for i in context] == list(outcome):
+                        row.append(1)
+                    else:
+                        row.append(0)
+                M.append(row)
+        self._incidence_matrix_constrained = np.array(M)
+
+        return self._incidence_matrix_constrained
 
 
 class MeasurementScenarioImplementations(abc.ABC):

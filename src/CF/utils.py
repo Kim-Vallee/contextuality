@@ -22,6 +22,21 @@ from CF.empirical_model import EmpiricalModel
 from CF.measurement_scenario import MeasurementScenario
 
 
+def polytope_to_H(D: np.ndarray):
+    """
+    Converts a polytope in V representation to H representation.
+
+    :param D: The polytope in V representation.
+    :return: The polytope in H representation.
+    :rtype: np.ndarray
+    """
+    mat = cdd.Matrix(D)
+    mat.rep_type = cdd.RepType.GENERATOR
+    poly = cdd.Polyhedron(mat)
+    H = np.array(poly.get_inequalities())
+    return H, poly
+
+
 def NC_polytope(MS: MeasurementScenario, representation: str = "V") \
         -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """
@@ -51,10 +66,8 @@ def NC_polytope(MS: MeasurementScenario, representation: str = "V") \
     D = np.array(D)
     if representation == "V":
         return D
-    mat = cdd.Matrix(D)
-    mat.rep_type = cdd.RepType.GENERATOR
-    poly = cdd.Polyhedron(mat)
-    H = np.array(poly.get_inequalities())
+
+    H, _ = polytope_to_H(D)
     if representation == "H":
         return H
 
@@ -277,6 +290,26 @@ def compute_NCF(empirical_model: EmpiricalModel,
     return {"opt_sol": b.value, "NCF": prob.value, "CF": 1 - prob.value}
 
 
+def compute_NCF_Winter(empirical_model: EmpiricalModel, solver: str = "MOSEK", verbose: bool = False) \
+        -> Dict[str, float]:
+    MS = empirical_model.measurement_scenario
+    ve = empirical_model.vector
+
+    incidence_matrix = MS.incidence_matrix_constrained
+
+    n = incidence_matrix.shape[1]
+
+    b = cp.Variable(n, nonneg=True)
+
+    # Define problem and solve it.
+    constraints = [incidence_matrix @ b <= ve]
+
+    prob = cp.Problem(cp.Maximize(np.ones(n).T @ b), constraints)
+    prob.solve(solver=solver, verbose=verbose)
+
+    return {"opt_sol": b.value, "NCF": prob.value, "CF": 1 - prob.value}
+
+
 def compute_max_CF(MS: MeasurementScenario, sigma: float, eta: float, solver: Optional[str] = "MOSEK",
                    verbose: Optional[bool] = False) -> Dict[str, Any]:
     """
@@ -386,7 +419,7 @@ def get_bound_Winter(MS: MeasurementScenario, lambdas: Optional[np.ndarray] = No
                      solver: Optional[str] = "MOSEK",
                      verbose: Optional[bool] = False) -> Dict[str, Any]:
     """
-    Get the bound for the Winter model
+    Get the bound for the Winter model.
 
     :param MS: Measurement Scenario which we are considering.
     :param lambdas: The lambdas used to compute the bound. If None, ones are used.
@@ -396,12 +429,25 @@ def get_bound_Winter(MS: MeasurementScenario, lambdas: Optional[np.ndarray] = No
     :param verbose: Whether to verbose the outputs.
     :return: The classical bound.
     """
-    assert bound_type in ["classical", "global"],\
+    assert bound_type in ["classical", "global"], \
         "Type of bound not recognized. Allowed values are classical and global."
 
     O, X, M = MS.O, MS.X, MS.M
-
     nb_projectors = len(X)
+
+    # Get the polytope of all possible assignements
+    possible_assignements = np.array(list(itertools.product([0, 1], repeat=nb_projectors)))
+    allowed_assignements = []
+    for assignement in possible_assignements:
+        allowed = True
+        for ctx in M:
+            if assignement[ctx].sum() > 1:
+                allowed = False
+        if allowed:
+            allowed_assignements.append(assignement)
+
+    allowed_assignements = np.array(allowed_assignements)
+
     if lambdas is None:
         lambdas = np.ones(nb_projectors)
 
@@ -429,3 +475,87 @@ def get_bound_Winter(MS: MeasurementScenario, lambdas: Optional[np.ndarray] = No
         return {"global_bound": prob.value, "Xi": Xi.value}
 
     return {"classical_bound": prob.value, "Xi": Xi.value}
+
+
+def get_bound_Winter_epsilon(MS: MeasurementScenario, epsilon: float = 0):
+    # Very slow, since it makes all the possible assignments.
+    O, X, M = MS.O, MS.X, MS.M
+    nb_projectors = len(X)
+
+    lambdas = np.ones(nb_projectors)
+
+    flattened_M = np.array(M).flatten()
+    k_i = np.array([np.sum(flattened_M == i) for i in range(nb_projectors)])
+    cumul_sum = [0] + np.cumsum(k_i).tolist()
+    nb_projectors_contextual = int(np.sum(k_i))
+
+    global_assignements_contextual = np.array(list(itertools.product(O, repeat=nb_projectors_contextual)))
+    allowed_assignements_contextual = []
+    allowed_assignements_NC = []
+    for global_assignement in global_assignements_contextual:
+        allowed_contextual = True
+        allowed_non_contextual = True
+        encountered_observables = []
+        for ctx in M:
+            Xi_ctx = []
+            for m in ctx:
+                Xis_local = np.array(global_assignement[cumul_sum[m]:cumul_sum[m + 1]])
+                if allowed_contextual and not (Xis_local == Xis_local[0]).all():
+                    allowed_non_contextual = False
+                Xi_ctx.append(Xis_local[encountered_observables.count(m)])
+                encountered_observables.append(m)
+            if np.sum(Xi_ctx) > 1:
+                allowed_non_contextual = False
+                allowed_contextual = False
+        if allowed_contextual:
+            allowed_assignements_contextual.append(global_assignement)
+        if allowed_non_contextual:
+            allowed_assignements_NC.append(global_assignement)
+
+    allowed_assignements_contextual = np.array(allowed_assignements_contextual)
+    allowed_assignements_NC = np.array(allowed_assignements_NC)
+
+    # global_assignements_NC = np.array(list(itertools.product(O, repeat=nb_projectors)))
+    # allowed_assignements_NC = []
+    # for assignement in global_assignements_NC:
+    #     allowed = True
+    #     for ctx in M:
+    #         if assignement[ctx].sum() > 1:
+    #             allowed = False
+    #             break
+    #
+    #     if allowed:
+    #         generalized_assignement = np.array([[a] * k_i[i] for i, a in enumerate(assignement)]).flatten()
+    #         allowed_assignements_NC.append(generalized_assignement)
+
+    c = cp.Variable(allowed_assignements_NC.shape[0], nonneg=True)
+    d = cp.Variable(allowed_assignements_contextual.shape[0], nonneg=True)
+
+    constraints = []
+
+    constraints += [cp.sum(c) + cp.sum(d) == 1]
+    constraints += [cp.sum(d) <= epsilon]
+
+    Xi_NC = c @ allowed_assignements_NC
+    Xi_C = d @ allowed_assignements_contextual
+    Xi_p = Xi_NC + Xi_C
+
+    # Try any possible combination of projectors
+    poss = [list(range(k_i[i])) for i in range(len(k_i))]
+    poss_list = itertools.product(*poss)
+    # lambdas = np.array([[lambdas[i]] * k_i[i] for i in range(nb_projectors)]).flatten()
+
+    maxi = -float("inf")
+    Xi_max = None
+    org = None
+    for poss in poss_list:
+        Xi = [Xi_p[cumul_sum[i]: cumul_sum[i + 1]][poss[i]] for i, k in enumerate(k_i)]
+        Xi = cp.hstack(Xi)
+        prob = cp.Problem(cp.Maximize(cp.sum(cp.multiply(Xi, lambdas))), constraints)
+        prob.solve(solver="MOSEK", verbose=False)
+        if prob.value > maxi:
+            maxi = prob.value
+            Xi_max = Xi_p.value
+            org = poss
+
+    return {"result": maxi, "Xi": Xi_max, "org": org}
