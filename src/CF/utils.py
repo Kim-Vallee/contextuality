@@ -12,7 +12,7 @@
 
 """ Set of utilitary functions and constants used across the project """
 import itertools
-from typing import List, Optional, Dict, Any, Tuple, Union
+from typing import List, Optional, Dict, Any, Tuple, Union, Literal
 
 import cdd
 import cvxpy as cp
@@ -20,6 +20,8 @@ import numpy as np
 
 from CF.empirical_model import EmpiricalModel
 from CF.measurement_scenario import MeasurementScenario
+
+__cache_NC_polytope_H = {}
 
 
 def polytope_to_H(D: np.ndarray):
@@ -34,7 +36,7 @@ def polytope_to_H(D: np.ndarray):
     mat.rep_type = cdd.RepType.GENERATOR
     poly = cdd.Polyhedron(mat)
     H = np.array(poly.get_inequalities())
-    return H, poly
+    return H
 
 
 def NC_polytope(MS: MeasurementScenario, representation: str = "V") \
@@ -67,20 +69,27 @@ def NC_polytope(MS: MeasurementScenario, representation: str = "V") \
     if representation == "V":
         return D
 
-    H, _ = polytope_to_H(D)
+    X_hash = ",".join([str(x) for x in X])
+    M_hash = ",".join(["".join([str(o) for o in ctx]) for ctx in M])
+    O_hash = ",".join([str(o) for o in O])
+    __cache_NC_polytope_H[(X_hash, M_hash, O_hash)] = __cache_NC_polytope_H.get((X_hash, M_hash, O_hash),
+                                                                                polytope_to_H(D))
+    H = __cache_NC_polytope_H[(X_hash, M_hash, O_hash)]
     if representation == "H":
         return H
 
     return D, H
 
 
-def signalling_polytope(MS: MeasurementScenario) -> np.ndarray:
+def signalling_polytope(MS: MeasurementScenario, include_NS_polytope: bool = True) -> np.ndarray:
     """
     Creates the signalling polytope in V mode. All the outcomes are maximally signalling or no-signalling and
     deterministic.
 
     :param MS: The measurement scenario
     :type MS: MeasurementScenario
+    :param include_NS_polytope: Whether to return ONLY the signalling points or all the points.
+    :type include_NS_polytope: bool
     :return: The points of the Signalling polytope as rows
     :rtype: np.ndarray
     """
@@ -102,6 +111,12 @@ def signalling_polytope(MS: MeasurementScenario) -> np.ndarray:
             D = [A + B for A in D for B in temp]
 
     D = np.array([[int(i) for i in list(d)] for d in D])
+
+    if include_NS_polytope:
+        return D
+
+    NS_P = NC_polytope(MS)
+    D = np.array([row for row in D if not (row == NS_P).all(axis=1).any()])
 
     return D
 
@@ -310,7 +325,7 @@ def compute_NCF_Winter(empirical_model: EmpiricalModel, solver: str = "MOSEK", v
     return {"opt_sol": b.value, "NCF": prob.value, "CF": 1 - prob.value}
 
 
-def compute_max_CF(MS: MeasurementScenario, sigma: float, eta: float, solver: Optional[str] = "MOSEK",
+def compute_max_CF(MS: MeasurementScenario, sigma: float, eta: float, big_m: float = 2, solver: Optional[str] = "MOSEK",
                    verbose: Optional[bool] = False) -> Dict[str, Any]:
     """
     LP to find the maximum distance between two empirical models.
@@ -320,6 +335,7 @@ def compute_max_CF(MS: MeasurementScenario, sigma: float, eta: float, solver: Op
     :param sigma: Parameter dependence fraction.
     :type sigma: float
     :param eta: Outcome nondeterminism fraction.
+    :param big_m: Parameter for the big M method in LP.
     :param solver: The solver used for the LP. Defaults to 'MOSEK'.
     :type solver: str
     :param verbose: Whether the solver should verbose. Defaults to False.
@@ -334,7 +350,9 @@ def compute_max_CF(MS: MeasurementScenario, sigma: float, eta: float, solver: Op
     nb_contexts = len(MS.M)
     nb_entries = len(MS.M) * nb_outcomes
 
-    D, ineq = NC_polytope(MS, representation="BOTH")
+    ineq = NC_polytope(MS, representation="H")
+
+    D = signalling_polytope(MS)
 
     # region VARIABLE DEFINITION
     # Any point in the NS polytope
@@ -399,16 +417,38 @@ def compute_max_CF(MS: MeasurementScenario, sigma: float, eta: float, solver: Op
 
     # endregion
 
-    # region LP LOOP
-    max_violation = 0
-    max_violation_vector = np.zeros(nb_entries)
-    for i in range(ineq.shape[0]):
-        prob = cp.Problem(cp.Minimize((ineq @ ve)[i]), constraints)
-        prob.solve(solver=solver, verbose=verbose)
-        if prob.value < max_violation:
-            max_violation = prob.value
-            max_violation_vector[:] = ve.value
+    # region using M coefficients
+
+    violation = ineq @ ve
+    binary_selector = cp.Variable(violation.shape, boolean=True)
+
+    # Only one entry should be selected
+    constraints += [cp.sum(binary_selector) == violation.shape[0] - 1]
+
+    Z = cp.Variable(1)
+
+    for i in range(violation.shape[0]):
+        constraints += [Z >= violation[i] - big_m * binary_selector[i]]
+        constraints += [Z <= violation[i] + big_m * binary_selector[i]]
+
+    prob = cp.Problem(cp.Minimize(Z), constraints)
+    prob.solve(solver=solver, verbose=verbose)
+
+    max_violation_vector = ve.value
+    max_violation = prob.value
+
     # endregion
+
+    # # region LP LOOP
+    # max_violation = 0
+    # max_violation_vector = np.zeros(nb_entries)
+    # for i in range(ineq.shape[0]):
+    #     prob = cp.Problem(cp.Minimize((ineq @ ve)[i]), constraints)
+    #     prob.solve(solver=solver, verbose=verbose)
+    #     if prob.value < max_violation:
+    #         max_violation = prob.value
+    #         max_violation_vector[:] = ve.value
+    # # endregion
 
     return {"EmpiricalModel": EmpiricalModel(MS, max_violation_vector), "max_violation": max_violation}
 
@@ -559,3 +599,12 @@ def get_bound_Winter_epsilon(MS: MeasurementScenario, epsilon: float = 0):
             org = poss
 
     return {"result": maxi, "Xi": Xi_max, "org": org}
+
+
+if __name__ == '__main__':
+    O = [0, 1]
+    X = list(range(4))
+    M = [[a, b] for a in X[:2] for b in X[2:]]
+    chsh = MeasurementScenario(X, M, O)
+    res = compute_max_CF(chsh, 0.0, 1.0, verbose=True)
+    CF = compute_NCF(res['EmpiricalModel'])

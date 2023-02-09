@@ -38,6 +38,27 @@ class EmpiricalModel:
         self.measurement_scenario = measurement_scenario
 
     @property
+    def is_deterministic(self) -> bool:
+        """
+        Boolean property that tell whether the empirical model is deterministic or not.
+
+        :raises AttributeError: When no vector has been attributed yet.
+        :return: True iff the empirical model is deterministic
+        """
+        return self.is_valid and (self.vector == self.vector.astype("int")).all()
+
+    @property
+    def is_valid(self) -> bool:
+        """
+        Boolean property to know whether the model is a valid probabilistic model.
+
+        :raises AttributeError: When no vector has been attributed yet.
+        :return: True iff the empirical model is a valid probabilistic model.
+        """
+        return (self.vector >= 0).all() and (self.vector <= 1).all() and \
+            (np.sum(self.mvector, axis=1) == 1).all()
+
+    @property
     def vector(self) -> np.ndarray:
         """
         Accessor of the internal vectorial representation.
@@ -61,6 +82,15 @@ class EmpiricalModel:
         :type new_vector: Iterable
         """
         self._vector = np.array(new_vector).flatten()
+
+    @property
+    def mvector(self) -> np.ndarray:
+        """
+        Matrix version of the vector of the empirical model.
+
+        :return: matrix version of the vector
+        """
+        return self.vector.reshape(len(self.measurement_scenario.M), len(self.measurement_scenario.all_outcomes))
 
     def quantum_realisation(self, rho: np.ndarray, meas: np.ndarray) -> None:
         r"""

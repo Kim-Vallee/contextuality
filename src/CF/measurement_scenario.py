@@ -14,7 +14,7 @@
 """Contextual scenario for Contextual Fraction"""
 import abc
 import itertools
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -49,6 +49,7 @@ class MeasurementScenario:
 
         self._incidence_matrix = None
         self.outcomes_global = list(itertools.product(self.O, repeat=len(self.X)))
+        self._all_outcomes = list(itertools.product(self.O, repeat=len(M[0])))
 
     @property
     def incidence_matrix(self):
@@ -115,6 +116,20 @@ class MeasurementScenario:
 
         return self._incidence_matrix_constrained
 
+    @property
+    def all_outcomes(self) -> List[Tuple[int]]:
+        """
+        Give all the outcomes of the full measurement scenario.
+
+        :return: A list of all the outcomes.
+
+        :example:
+        >>> ms = MeasurementScenarioImplementations.CHSH()
+        >>> ms.all_outcomes
+        [(0, 0), (0, 1), (1, 0), (1, 1)]
+        """
+        return self._all_outcomes
+
 
 class MeasurementScenarioImplementations(abc.ABC):
     """
@@ -134,6 +149,14 @@ class MeasurementScenarioImplementations(abc.ABC):
         """ Generates the KCBS MeasurementScenario class. """
         X = [i for i in range(5)]
         M = [[i, i + 1] for i in range(4)] + [[4, 0]]
+        O = [0, 1]
+        return MeasurementScenario(X, M, O)
+
+    @staticmethod
+    def PeresMermin() -> MeasurementScenario:
+        """ Generates the Peres Mermin MeasurementScenario class. """
+        X = list(range(9))
+        M = [X[i:i + 3] for i in range(0, 9, 3)] + [[X[i]] + [X[i + 3]] + [X[i + 6]] for i in range(3)]
         O = [0, 1]
         return MeasurementScenario(X, M, O)
 
