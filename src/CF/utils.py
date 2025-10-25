@@ -72,8 +72,19 @@ def NC_polytope(MS: MeasurementScenario, representation: str = "V") \
     X_hash = ",".join([str(x) for x in X])
     M_hash = ",".join(["".join([str(o) for o in ctx]) for ctx in M])
     O_hash = ",".join([str(o) for o in O])
+
     __cache_NC_polytope_H[(X_hash, M_hash, O_hash)] = __cache_NC_polytope_H.get((X_hash, M_hash, O_hash),
-                                                                                polytope_to_H(D))
+                                                                                None)
+    if __cache_NC_polytope_H[(X_hash, M_hash, O_hash)] is None:
+        # First remove the useless dimension of D
+        # _D = np.zeros(D.shape)
+        # for i, det in enumerate(D):
+        #     _D[i] = det.reshape(len(M), len(MS.all_outcomes))[:, :-1].flatten()
+        #
+        # inequalities = polytope_to_H(D)
+
+        __cache_NC_polytope_H[(X_hash, M_hash, O_hash)] = polytope_to_H(D)
+
     H = __cache_NC_polytope_H[(X_hash, M_hash, O_hash)]
     if representation == "H":
         return H
@@ -246,6 +257,9 @@ def compute_signaling_fraction(empirical_model: EmpiricalModel,
     nb_outcomes = len(outcomes)
     nb_entries = ve.size
 
+    # em = 1-\sigma h + \sigma h'
+    # em >= (1 - \sigma) h
+
     h_NS = cp.Variable(nb_entries)
 
     constraints = [h_NS >= cp.Constant(0)]
@@ -260,13 +274,13 @@ def compute_signaling_fraction(empirical_model: EmpiricalModel,
 
     constraints += compatibility_of_marginals_constraints(MS, h_NS)
 
-    prob = cp.Problem(cp.Minimize(cp.sum(ve - h_NS)), constraints)
+    prob = cp.Problem(cp.Maximize(z), constraints)
     prob.solve(solver=solver, verbose=verbose)
 
-    NSF = sum([h_NS[i].value for i in range(nb_outcomes)])
+    NSF = z.value[0]
     SF = 1 - NSF
 
-    return {"SF": SF, "NSF": NSF}
+    return {"SF": SF, "NSF": NSF, "h_NS": EmpiricalModel(MS, h_NS.value)}
 
 
 def compute_NCF(empirical_model: EmpiricalModel,
@@ -283,18 +297,18 @@ def compute_NCF(empirical_model: EmpiricalModel,
     :return: The NCF, CF and the optimal description by NC model.
     :rtype: Dict[str, float]
     """
-    MS = empirical_model.measurement_scenario
+    ms = empirical_model.measurement_scenario
     ve = empirical_model.vector
 
-    O, X, M = MS.O, MS.X, MS.M
+    O, X, M = ms.O, ms.X, ms.M
 
-    outcomes_global = list(itertools.product(O, repeat=len(X)))
+    outcomes_global = ms.outcomes_global
 
     n = len(outcomes_global)
 
     b = cp.Variable(n, nonneg=True)
 
-    incidence_matrix = MS.incidence_matrix
+    incidence_matrix = ms.incidence_matrix
 
     # Define problem and solve it.
     constraints = [incidence_matrix @ b <= ve]
@@ -439,17 +453,6 @@ def compute_max_CF(MS: MeasurementScenario, sigma: float, eta: float, big_m: flo
 
     # endregion
 
-    # # region LP LOOP
-    # max_violation = 0
-    # max_violation_vector = np.zeros(nb_entries)
-    # for i in range(ineq.shape[0]):
-    #     prob = cp.Problem(cp.Minimize((ineq @ ve)[i]), constraints)
-    #     prob.solve(solver=solver, verbose=verbose)
-    #     if prob.value < max_violation:
-    #         max_violation = prob.value
-    #         max_violation_vector[:] = ve.value
-    # # endregion
-
     return {"EmpiricalModel": EmpiricalModel(MS, max_violation_vector), "max_violation": max_violation}
 
 
@@ -530,7 +533,7 @@ def get_bound_Winter_epsilon(MS: MeasurementScenario, epsilon: float = 0):
     nb_projectors_contextual = int(np.sum(k_i))
 
     global_assignements_contextual = np.array(list(itertools.product(O, repeat=nb_projectors_contextual)))
-    allowed_assignements_contextual = []
+    global_assignements_NC = np.array(list(itertools.product(O, repeat=nb_projectors)))
     allowed_assignements_NC = []
     for global_assignement in global_assignements_contextual:
         allowed_contextual = True
