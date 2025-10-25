@@ -3,7 +3,7 @@ import itertools
 import numpy as np
 from tabulate import tabulate
 
-from CF.empirical_model import EmpiricalModel
+from cf.empirical_model import EmpiricalModel
 
 
 def print_table(em: EmpiricalModel, precision: int = 3, tablefmt: str = "grid"):

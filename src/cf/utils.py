@@ -18,8 +18,8 @@ import cdd
 import cvxpy as cp
 import numpy as np
 
-from CF.empirical_model import EmpiricalModel
-from CF.measurement_scenario import MeasurementScenario
+from cf.empirical_model import EmpiricalModel
+from cf.measurement_scenario import MeasurementScenario
 
 __cache_NC_polytope_H = {}
 

@@ -17,7 +17,6 @@ import numpy as np
 # ---------------------------
 # Well known empirical models
 # ---------------------------
-from CF.measurement_scenario import MeasurementScenario
 
 EMPIRICAL_MODELS = {
     "CHSH": np.array([

@@ -18,7 +18,7 @@ from typing import Optional, Iterable, Union, Tuple, List
 import cvxpy as cp
 import numpy as np
 
-from CF.measurement_scenario import MeasurementScenario
+from cf.measurement_scenario import MeasurementScenario
 
 
 class EmpiricalModel:
