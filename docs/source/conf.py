@@ -17,12 +17,12 @@ sys.path.insert(0, os.path.abspath('../../src'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'CF'
+project = 'cf'
 copyright = '2022, Kim Vallée, Adel Sohbi'
 author = 'Kim Vallée, Adel Sohbi'
 
 # The full version, including alpha/beta/rc tags
-release = '1.0'
+release = '1.0.0'
 
 # -- General configuration ---------------------------------------------------
 
