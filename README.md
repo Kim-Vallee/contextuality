@@ -1,4 +1,4 @@
-# CF
+# Contextuality package
 
 [![Software License][ico-license]](LICENSE)
 ![Version][ico-version]

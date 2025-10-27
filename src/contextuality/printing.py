@@ -3,7 +3,7 @@ import itertools
 import numpy as np
 from tabulate import tabulate
 
-from cf.empirical_model import EmpiricalModel
+from contextuality.empirical_model import EmpiricalModel
 
 
 def print_table(em: EmpiricalModel, precision: int = 3, tablefmt: str = "grid") -> None:

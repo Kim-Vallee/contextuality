@@ -1,5 +1,5 @@
 [project]
-name = "cf"
+name = "contextuality"
 version = "1.0.0"
 description = "A package for computing contextuality related stuff"
 authors = [

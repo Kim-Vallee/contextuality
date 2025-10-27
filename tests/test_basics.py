@@ -1,8 +1,8 @@
 import numpy as np
 
-from cf.empirical_model import *
-from cf.measurement_scenario import *
-from cf.constants import EMPIRICAL_MODELS
+from contextuality.empirical_model import *
+from contextuality.measurement_scenario import *
+from contextuality.constants import EMPIRICAL_MODELS
 import qutip
 from qutip import ket2dm, identity, basis
 
