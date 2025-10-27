@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to CF's documentation!
+Welcome to cf's documentation!
 ==============================
 
 .. toctree::
@@ -12,6 +12,7 @@ Welcome to CF's documentation!
    modules/empirical_model
    modules/measurement_scenario
    modules/utils
+   modules/printing
 
 
 

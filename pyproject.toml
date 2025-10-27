@@ -6,7 +6,7 @@ authors = [
     {name = "Kim Vallée", email = "kim.vallee@protonmail.com"},
     {name = "Adel Sohbi"}
 ]
-license = "Apache-2.0"
+license = "CC BY-NC 4.0"
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
 dependencies = [

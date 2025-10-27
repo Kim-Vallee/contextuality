@@ -533,6 +533,7 @@ def get_bound_Winter_epsilon(MS: MeasurementScenario, epsilon: float = 0):
     nb_projectors_contextual = int(np.sum(k_i))
 
     global_assignements_contextual = np.array(list(itertools.product(O, repeat=nb_projectors_contextual)))
+    allowed_assignements_contextual = []
     global_assignements_NC = np.array(list(itertools.product(O, repeat=nb_projectors)))
     allowed_assignements_NC = []
     for global_assignement in global_assignements_contextual:
@@ -557,19 +558,6 @@ def get_bound_Winter_epsilon(MS: MeasurementScenario, epsilon: float = 0):
 
     allowed_assignements_contextual = np.array(allowed_assignements_contextual)
     allowed_assignements_NC = np.array(allowed_assignements_NC)
-
-    # global_assignements_NC = np.array(list(itertools.product(O, repeat=nb_projectors)))
-    # allowed_assignements_NC = []
-    # for assignement in global_assignements_NC:
-    #     allowed = True
-    #     for ctx in M:
-    #         if assignement[ctx].sum() > 1:
-    #             allowed = False
-    #             break
-    #
-    #     if allowed:
-    #         generalized_assignement = np.array([[a] * k_i[i] for i, a in enumerate(assignement)]).flatten()
-    #         allowed_assignements_NC.append(generalized_assignement)
 
     c = cp.Variable(allowed_assignements_NC.shape[0], nonneg=True)
     d = cp.Variable(allowed_assignements_contextual.shape[0], nonneg=True)
@@ -602,12 +590,3 @@ def get_bound_Winter_epsilon(MS: MeasurementScenario, epsilon: float = 0):
             org = poss
 
     return {"result": maxi, "Xi": Xi_max, "org": org}
-
-
-if __name__ == '__main__':
-    O = [0, 1]
-    X = list(range(4))
-    M = [[a, b] for a in X[:2] for b in X[2:]]
-    chsh = MeasurementScenario(X, M, O)
-    res = compute_max_CF(chsh, 0.0, 1.0, verbose=True)
-    CF = compute_NCF(res['EmpiricalModel'])

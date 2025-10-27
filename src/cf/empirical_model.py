@@ -160,6 +160,7 @@ class EmpiricalModel:
     def probability_outcome(self, outcome: int, ctx: List[int], observable: int) -> float:
         """
         Compute the probability of an outcome given a context and an observable.
+
         :param outcome: represents the outcome of the observable (p(outcome | observable_ctx1))
         :param ctx1: represents the context of the observable
         :param observable: represents the observable

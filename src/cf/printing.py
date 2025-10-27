@@ -6,7 +6,14 @@ from tabulate import tabulate
 from cf.empirical_model import EmpiricalModel
 
 
-def print_table(em: EmpiricalModel, precision: int = 3, tablefmt: str = "grid"):
+def print_table(em: EmpiricalModel, precision: int = 3, tablefmt: str = "grid") -> None:
+    """
+    Pretty prints an empirical model.
+
+    :param em: Empirical model to print.
+    :param precision: Decimal precision of the table.
+    :param tablefmt: parameter to pass to tablulate.
+    """
     scenario = em.measurement_scenario
     X, M, O = scenario.X, scenario.M, scenario.O
 

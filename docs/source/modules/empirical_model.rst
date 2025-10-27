@@ -5,11 +5,11 @@ Module description
 ------------------
 
 This module contains the class :class:`EmpiricalModel` which is focused on the implementation of an empirical model for
-a given measurement scenario. At the moment this class mainly holds its vectorial representation but it is a good
-placeholder for future methods applicable to the empirical model only.
+a given measurement scenario. The class is fully developed with many magic commands for multiplication and addition,
+together with properties and methods.
 
 Module documentation
 --------------------
 
-.. automodule:: CF.empirical_model
+.. automodule:: cf.empirical_model
    :members:
