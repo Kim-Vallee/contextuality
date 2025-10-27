@@ -213,20 +213,8 @@ class EmpiricalModel:
         b = cp.Variable(n_signalling, nonneg=True)
         b_nc = cp.Variable(n, nonneg=True)
 
-        # Define problem and solve it.
-        # Hypothesis for the proof of that is by disturbance theory, I have a fixed behaviour for eta=0
-        # incidence_matrix @ b_nc, then for small epsilon the added value will go directly to
-        # incidence_matrix_signalling @ b which adds at most eta contextual fraction so
-        # that incidence_matrix_signalling @ b + incidence_matrix @ b_nc still has a contextual fraction of eta at most.
-        # Proof of optimality to be seen with Marco.
         constraints = [incidence_matrix_signalling @ b + incidence_matrix @ b_nc <= ve]
 
-        # Since we are allowed any no signalling behaviour the obtained behaviour should be no-signalling
-        # constraints += compatibility_of_marginals_constraints(ms,
-        #                                                       incidence_matrix_signalling @ b
-        #                                                        + incidence_matrix @ b_nc)
-
-        # Also, for no-signalling behaviour eta should match the maximum contextual fraction attainable
         constraints += [np.ones(n_signalling).T @ b <= eta]
 
         prob = cp.Problem(cp.Maximize(np.ones(n_signalling).T @ b + np.ones(n).T @ b_nc), constraints)
@@ -247,7 +235,6 @@ class EmpiricalModel:
 
         incidence_matrix = ms.incidence_matrix
 
-        # Define problem and solve it.
         constraints = [incidence_matrix @ b <= ve]
 
         prob = cp.Problem(cp.Maximize(np.ones(n).T @ b), constraints)
