@@ -3,23 +3,21 @@
 [![Software License][ico-license]](LICENSE)
 ![Version][ico-version]
 
-This project aims at having tools to compute the contextual fraction, and various associated quantities. It has many
-linear programs in it, that could be used for other applications.
+This project is a starter project to have many tools to compute various quantities in measurement scenarios as defined
+by [Abramsky and Brandenburger](http://arxiv.org/abs/1401.2561). It can be used in a variety of cases.
 
 ## Install
 
-Via pip
-
-``` bash
-$ python -m pip install -r requirements.txt
-$ python -m pip install .
+To install the package from pypi you can simply run pip:
+```shell
+$ python -m pip install contextuality
 ```
 
-or dynamically
+### Developers
 
-``` bash
-$ python -m pip install -r requirements.txt
-$ python -m pip install -e .
+If you wish to improve the package you can install from the sources with poetry:
+```shell
+$ poetry install --with dev
 ```
 
 ## Documentation
@@ -37,10 +35,10 @@ documentation.
 ## Usage example
 
 ```python
-from CF.measurement_scenario import MeasurementScenario
+from contextuality.measurement_scenario import MeasurementScenario
 import numpy as np
-from CF.empirical_model import EmpiricalModel
-from CF.utils import compute_max_CF, compute_deterministic_fraction, compute_signaling_fraction, compute_NCF
+from contextuality.empirical_model import EmpiricalModel
+from contextuality.utils import compute_max_CF, compute_deterministic_fraction, compute_signaling_fraction, compute_NCF
 
 X = [i for i in range(4)]
 M = [[0, 2], [0, 3], [1, 2], [1, 3]]
@@ -62,8 +60,6 @@ empirical_model.quantum_realisation(rho, meas)
 
 result = compute_max_CF(kcbs, eta=0.3, sigma=0.5)
 
-# result = LP_inequality(chsh)
-# ve = EmpiricalModel(chsh, result['p'])
 print(result['EmpiricalModel'].vector)
 
 df = compute_deterministic_fraction(result["EmpiricalModel"], verbose=False)
@@ -82,13 +78,13 @@ Examples in the form of notebooks can be found in the [notebooks](notebooks) fol
 
 ## Credits
 
-- [Kim Vallée](https://github.com/Kim-Vallee)
-- [Adel Sohbi](https://github.com/adelshb)
+- [Kim Vallée](https://github.com/Kim-Vallee) -- Author and main contributor
+- [Adel Sohbi](https://github.com/adelshb) -- Author
 
 ## License
 
-The Apache 2.0 License. Please see [License File](LICENSE) for more information.
+The CC BY-NC 4.0. Please see [License File](LICENSE) for more information.
 
-[ico-version]: https://img.shields.io/badge/Version-1.0-brightgreen.svg?style=flat-square
+[ico-version]: https://img.shields.io/badge/Version-1.0.0-brightgreen.svg?style=flat-square
 
-[ico-license]: https://img.shields.io/badge/License-Apache_2.0-brightgreen.svg?style=flat-square
+[ico-license]: https://img.shields.io/badge/License-CC_BYNC_4.0-brightgreen.svg?style=flat-square
