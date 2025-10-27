@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.abspath('../../src'))
 project = 'contextuality'
 copyright = '2022, Kim Vallée, Adel Sohbi'
 author = 'Kim Vallée, Adel Sohbi'
+master_doc = 'index'
 
 # The full version, including alpha/beta/rc tags
 release = '1.0.0'
