@@ -22,6 +22,10 @@ $ poetry install --with dev
 
 ## Documentation
 
+The documentation is available on [readthedocs](https://contextuality.readthedocs.io/en/latest/).
+
+### Compile documentations
+
 The documentation can be compiled in the [docs](docs) directory.
 
 ```bash

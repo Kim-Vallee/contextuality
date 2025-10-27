@@ -35,5 +35,7 @@ qutip = "^5.2.1"
 pytest = ">=8.4.2,<9.0.0"
 highspy = "^1.12.0"
 
+[tool.poetry.requires-plugins]
+poetry-plugin-export = ">=1.8"
 
 
