@@ -17,8 +17,8 @@ sys.path.insert(0, os.path.abspath('../../src'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'contextuality'
-copyright = '2022, Kim Vallée, Adel Sohbi'
+project = 'Contextuality'
+copyright = '2025, Kim Vallée, Adel Sohbi'
 author = 'Kim Vallée, Adel Sohbi'
 master_doc = 'index'
 
