@@ -1,6 +1,6 @@
 [project]
 name = "contextuality"
-version = "1.0.0"
+version = "1.0.1"
 description = "A package for computing contextuality related stuff"
 authors = [
     {name = "Kim Vallée", email = "kim.vallee@protonmail.com"},
