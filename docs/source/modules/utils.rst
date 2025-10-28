@@ -11,5 +11,5 @@ some useful. Various optimizations are to be made.
 Module documentation
 --------------------
 
-.. automodule:: cf.utils
+.. automodule:: contextuality.utils
    :members:

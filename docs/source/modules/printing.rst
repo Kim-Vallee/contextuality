@@ -9,5 +9,5 @@ This module contains functions that can be used to properly print empirical mode
 Module documentation
 --------------------
 
-.. automodule:: cf.printing
+.. automodule:: contextuality.printing
    :members:

@@ -11,5 +11,5 @@ together with properties and methods.
 Module documentation
 --------------------
 
-.. automodule:: cf.empirical_model
+.. automodule:: contextuality.empirical_model
    :members:

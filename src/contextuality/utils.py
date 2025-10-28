@@ -24,7 +24,7 @@ from contextuality.measurement_scenario import MeasurementScenario
 __cache_NC_polytope_H = {}
 
 
-def polytope_to_H(D: np.ndarray):
+def polytope_to_H(D: np.ndarray) -> np.array:
     """
     Converts a polytope in V representation to H representation.
 
@@ -32,10 +32,10 @@ def polytope_to_H(D: np.ndarray):
     :return: The polytope in H representation.
     :rtype: np.ndarray
     """
-    mat = cdd.Matrix(D)
-    mat.rep_type = cdd.RepType.GENERATOR
-    poly = cdd.Polyhedron(mat)
-    H = np.array(poly.get_inequalities())
+    mat = cdd.matrix_from_array(D, rep_type=cdd.RepType.GENERATOR)
+    poly = cdd.polyhedron_from_matrix(mat)
+    ineqs = cdd.copy_inequalities(poly)
+    H = np.array(ineqs.array)
     return H
 
 
