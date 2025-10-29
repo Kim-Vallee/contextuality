@@ -1,7 +1,7 @@
 [project]
 name = "contextuality"
 version = "1.0.1"
-description = "A package for computing contextuality related stuff"
+description = "Contextuality is a package that allows to compute various contextuality related quantities and formalize scenarios in quantum theory."
 authors = [
     {name = "Kim Vallée", email = "kim.vallee@protonmail.com"},
     {name = "Adel Sohbi"}
