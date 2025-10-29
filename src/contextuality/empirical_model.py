@@ -28,14 +28,12 @@ class EmpiricalModel:
         def __init__(self, msg):
             super().__init__(msg)
 
-    def __init__(self, measurement_scenario: MeasurementScenario, empirical_model: Optional[np.ndarray] = None):
+    def __init__(self, measurement_scenario: MeasurementScenario, empirical_model: Optional[List] = None):
         """
         Constructor for EmpiricalModel.
 
         :param measurement_scenario: The measurement scenario associated to such a model.
-        :type measurement_scenario: MeasurementScenario
         :param empirical_model: The empirical model vectorial representation. Defaults to None.
-        :type empirical_model: np.ndarray
         """
         self._meas = None
         self._rho = None
