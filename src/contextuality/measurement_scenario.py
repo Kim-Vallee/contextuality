@@ -292,9 +292,9 @@ class MeasurementScenarioImplementations(abc.ABC):
 
 
 if __name__ == '__main__':
-    from CF.empirical_model import EmpiricalModel
-    from CF.utils import compute_signaling_fraction
-    from CF.constants import EMPIRICAL_MODELS
+    from contextuality.empirical_model import EmpiricalModel
+    from contextuality.utils import compute_signaling_fraction
+    from contextuality.constants import EMPIRICAL_MODELS
 
     X = [i for i in range(4)]
     M = [[0, 2], [0, 3], [1, 2], [1, 3]]

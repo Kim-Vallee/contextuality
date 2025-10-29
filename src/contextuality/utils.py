@@ -76,13 +76,6 @@ def NC_polytope(MS: MeasurementScenario, representation: str = "V") \
     __cache_NC_polytope_H[(X_hash, M_hash, O_hash)] = __cache_NC_polytope_H.get((X_hash, M_hash, O_hash),
                                                                                 None)
     if __cache_NC_polytope_H[(X_hash, M_hash, O_hash)] is None:
-        # First remove the useless dimension of D
-        # _D = np.zeros(D.shape)
-        # for i, det in enumerate(D):
-        #     _D[i] = det.reshape(len(M), len(MS.all_outcomes))[:, :-1].flatten()
-        #
-        # inequalities = polytope_to_H(D)
-
         __cache_NC_polytope_H[(X_hash, M_hash, O_hash)] = polytope_to_H(D)
 
     H = __cache_NC_polytope_H[(X_hash, M_hash, O_hash)]
