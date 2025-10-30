@@ -124,7 +124,6 @@ def signalling_polytope(MS: MeasurementScenario, include_NS_polytope: bool = Tru
 
     return D
 
-
 def compatibility_of_marginals_constraints(MS: MeasurementScenario, EM_vector: cp.Variable) -> List:
     """
     Generate compatibility of marginals constraints on an empirical model vector as a Variable of cvxpy.
@@ -208,108 +207,6 @@ def compute_deterministic_fraction(empirical_model: EmpiricalModel,
     OD = max(c.value)
 
     return {"OD": OD, "NOD": 1 - OD}
-
-
-def compute_signaling_fraction(empirical_model: EmpiricalModel,
-                               solver: str = "MOSEK", verbose: bool = False) -> Dict[str, float]:
-    """
-    Computes the signaling fraction from an empirical model and a MeasurementScenario.
-
-    :param empirical_model: The empirical model that describes the experiment.
-    :type empirical_model: EmpiricalModel
-    :param solver: Solver for cvxpy. Defaults to "MOSEK".
-    :type solver: str
-    :param verbose: Whether the solver should verbose. Defaults to False.
-    :type verbose: bool
-    :return: Signalling and non-signalling fractions
-    :rtype: Dict[str, float]
-    """
-
-    # The idea is to try to describe the empirical model
-    # as a decomposition of no-signaling and signaling
-    # and to maximize the no-signaling fraction which is
-    # very close to the non-contextual fraction.
-    # In other words I assume that the empirical model
-    # is a sum of two hidden variable models, one that
-    # is signaling and one that is not.
-
-    MS = empirical_model.measurement_scenario
-    ve = empirical_model.vector
-
-    # Problem formulation :
-    # Minimize distance (v_e, \lambda * h_NS)
-    # constraints :
-    # h_NS must respect the compatibility of marginals
-    # v_e >= h_NS
-    # \lambda * sum(h_NS[row]) = 1
-    # 0 <= lambda <= 1
-
-    O, M = MS.O, MS.M
-
-    outcomes = list(itertools.product(O, repeat=len(M[0])))
-    nb_outcomes = len(outcomes)
-    nb_entries = ve.size
-
-    # em = 1-\sigma h + \sigma h'
-    # em >= (1 - \sigma) h
-
-    h_NS = cp.Variable(nb_entries)
-
-    constraints = [h_NS >= cp.Constant(0)]
-
-    constraints += [ve >= h_NS]
-
-    z = cp.Variable(1, nonneg=True)
-
-    # Forces the normalization with respect to lambda
-    for i in range(0, nb_entries, nb_outcomes):
-        constraints += [cp.sum(h_NS[i: i + nb_outcomes]) == z]
-
-    constraints += compatibility_of_marginals_constraints(MS, h_NS)
-
-    prob = cp.Problem(cp.Maximize(z), constraints)
-    prob.solve(solver=solver, verbose=verbose)
-
-    NSF = z.value[0]
-    SF = 1 - NSF
-
-    return {"SF": SF, "NSF": NSF, "h_NS": EmpiricalModel(MS, h_NS.value)}
-
-
-def compute_NCF(empirical_model: EmpiricalModel,
-                solver: Optional[str] = 'MOSEK', verbose: bool = False) -> Dict[str, float]:
-    """
-    Compute the Non-Contextual Fraction (NCF) of an empirical model.
-
-    :param empirical_model: Empirical model describing the experiment.
-    :type empirical_model: EmpiricalModel
-    :param solver: The solver used for cvxpy. Defaults to "MOSEK".
-    :type solver: str
-    :param verbose: Whether the solver should verbose. Defaults to False.
-    :type verbose: bool
-    :return: The NCF, CF and the optimal description by NC model.
-    :rtype: Dict[str, float]
-    """
-    ms = empirical_model.measurement_scenario
-    ve = empirical_model.vector
-
-    O, X, M = ms.O, ms.X, ms.M
-
-    outcomes_global = ms.outcomes_global
-
-    n = len(outcomes_global)
-
-    b = cp.Variable(n, nonneg=True)
-
-    incidence_matrix = ms.incidence_matrix
-
-    # Define problem and solve it.
-    constraints = [incidence_matrix @ b <= ve]
-
-    prob = cp.Problem(cp.Maximize(np.ones(n).T @ b), constraints)
-    prob.solve(solver=solver, verbose=verbose)
-
-    return {"opt_sol": b.value, "NCF": prob.value, "CF": 1 - prob.value}
 
 
 def compute_NCF_Winter(empirical_model: EmpiricalModel, solver: str = "MOSEK", verbose: bool = False) \

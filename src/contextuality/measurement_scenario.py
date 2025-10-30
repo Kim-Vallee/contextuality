@@ -216,6 +216,36 @@ class MeasurementScenario:
         return f"MeasurementScenario(X={self.X}, M={self.M}, O={self.O})"
 
 
+class MeasurementScenarioImplementations(abc.ABC):
+    """
+    Director for many implementations of the MeasurementScenario, and to be DRY.
+    """
+
+    @staticmethod
+    def CHSH() -> MeasurementScenario:
+        """ Generates the CHSH MeasurementScenario class. """
+        O = [0, 1]
+        X = list(range(4))
+        M = [[a, b] for a in X[:2] for b in X[2:]]
+        return MeasurementScenario(X, M, O)
+
+    @staticmethod
+    def KCBS() -> MeasurementScenario:
+        """ Generates the KCBS MeasurementScenario class. """
+        X = [i for i in range(5)]
+        M = [[i, i + 1] for i in range(4)] + [[4, 0]]
+        O = [0, 1]
+        return MeasurementScenario(X, M, O)
+
+    @staticmethod
+    def PeresMermin() -> MeasurementScenario:
+        """ Generates the Peres Mermin MeasurementScenario class. """
+        X = list(range(9))
+        M = [X[i:i + 3] for i in range(0, 9, 3)] + [[X[i]] + [X[i + 3]] + [X[i + 6]] for i in range(3)]
+        O = [0, 1]
+        return MeasurementScenario(X, M, O)
+
+
 class GeneralizedMeasurementScenario(MeasurementScenario):
     def __init__(self,
                  X: List[int_or_symbol],
@@ -259,36 +289,6 @@ class GeneralizedMeasurementScenario(MeasurementScenario):
     @property
     def incidence_matrix(self):
         return super().incidence_matrix
-
-
-class MeasurementScenarioImplementations(abc.ABC):
-    """
-    Director for many implementations of the MeasurementScenario, and to be DRY.
-    """
-
-    @staticmethod
-    def CHSH() -> MeasurementScenario:
-        """ Generates the CHSH MeasurementScenario class. """
-        O = [0, 1]
-        X = list(range(4))
-        M = [[a, b] for a in X[:2] for b in X[2:]]
-        return MeasurementScenario(X, M, O)
-
-    @staticmethod
-    def KCBS() -> MeasurementScenario:
-        """ Generates the KCBS MeasurementScenario class. """
-        X = [i for i in range(5)]
-        M = [[i, i + 1] for i in range(4)] + [[4, 0]]
-        O = [0, 1]
-        return MeasurementScenario(X, M, O)
-
-    @staticmethod
-    def PeresMermin() -> MeasurementScenario:
-        """ Generates the Peres Mermin MeasurementScenario class. """
-        X = list(range(9))
-        M = [X[i:i + 3] for i in range(0, 9, 3)] + [[X[i]] + [X[i + 3]] + [X[i + 6]] for i in range(3)]
-        O = [0, 1]
-        return MeasurementScenario(X, M, O)
 
 
 if __name__ == '__main__':
