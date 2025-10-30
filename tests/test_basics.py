@@ -72,13 +72,13 @@ def test_quantum_realization_and_cf():
 
     assert np.isclose(em.vector, np.array([0, 0.45, 0.45, 0.11] * 5), atol=0.01).all()
 
-    assert em.compute_NCF(solver="highs")["CF"] > 0
+    assert em.compute_cf(solver="highs")["CF"] > 0
 
     chsh = MeasurementScenarioImplementations.CHSH()
 
     em_det = EmpiricalModel(chsh, EMPIRICAL_MODELS['FD'])
 
-    assert em_det.compute_NCF(solver="highs")["CF"] < 1e-4
+    assert em_det.compute_cf(solver="highs")["CF"] < 1e-4
 
 
 def test_other_methods():
