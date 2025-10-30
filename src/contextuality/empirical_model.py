@@ -17,16 +17,13 @@ from typing import Optional, Iterable, Union, Tuple, List, Dict, Any, Self
 
 import cvxpy as cp
 import numpy as np
+from numpy import ndarray
 
 from contextuality.measurement_scenario import MeasurementScenario
 
 
 class EmpiricalModel:
     """ Empirical model class, that is a simple holder for an array, and the way to generate them """
-
-    class WrongMeasurementScenarioError(Exception):
-        def __init__(self, msg):
-            super().__init__(msg)
 
     def __init__(self, measurement_scenario: MeasurementScenario, empirical_model: Optional[List] = None):
         """
@@ -43,7 +40,11 @@ class EmpiricalModel:
                 (f"The empirical model does not have the right shape it should be flat (got {empirical_model.shape[0]} "
                  f"expected {len(measurement_scenario.M) * len(measurement_scenario.all_outcomes)})")
         self._vector = empirical_model
-        self.measurement_scenario = measurement_scenario
+        self._measurement_scenario = measurement_scenario
+
+    @property
+    def measurement_scenario(self) -> MeasurementScenario:
+        return self._measurement_scenario
 
     @property
     def is_deterministic(self) -> bool:
@@ -67,13 +68,13 @@ class EmpiricalModel:
             (np.sum(self.mvector, axis=1) == 1).all()
 
     @property
-    def vector(self) -> np.ndarray:
+    def vector(self) -> ndarray:
         """
         Accessor of the internal vectorial representation.
 
         :raises AttributeError: When no vector has been attributed yet.
         :return: The vector representation.
-        :rtype: np.ndarray
+        :rtype: ndarray
         """
         if self._vector is None:
             raise AttributeError("The empirical model is not defined. Please call the method quantum_realisation or "
@@ -92,7 +93,7 @@ class EmpiricalModel:
         self._vector = np.array(new_vector).flatten()
 
     @property
-    def mvector(self) -> np.ndarray:
+    def mvector(self) -> ndarray:
         """
         Matrix version of the vector of the empirical model.
 
@@ -100,16 +101,16 @@ class EmpiricalModel:
         """
         return self.vector.reshape(len(self.measurement_scenario.M), len(self.measurement_scenario.all_outcomes))
 
-    def quantum_realisation(self, rho: np.ndarray, meas: np.ndarray) -> None:
+    def quantum_realisation(self, rho: ndarray, meas: ndarray) -> None:
         r"""
         Compute an empirical model/behavior from a provided quantum realization.
 
         :param rho:     The quantum state density matrix.
-        :type rho:      np.ndarray
+        :type rho:      ndarray
         :param meas:    The measurements in a ndarray. The index are "measurement label", "outcome" to access
                         a specific measurement PVM. For instance, meas[0,0] accesses the PVM for measurement
                         with label X[0] and outcome O[0] respectively.
-        :type meas:     np.ndarray
+        :type meas:     ndarray
         """
 
         # Get parameters
@@ -131,7 +132,7 @@ class EmpiricalModel:
         self._vector = np.real(np.array(empirical_model))
 
     # noinspection PyTupleAssignmentBalance
-    def get_signalling_variables(self) -> Tuple[dict, np.ndarray]:
+    def get_signalling_variables(self) -> Tuple[dict, ndarray]:
         assert self.is_deterministic, "The model must be deterministic"
         observables_values = {x: None for x in self.measurement_scenario.X}
         observables_signalling = {x: False for x in self.measurement_scenario.X}
@@ -179,7 +180,7 @@ class EmpiricalModel:
         maximum = 0
         for i, ctx1 in enumerate(self.measurement_scenario.M):
             for j, ctx2 in enumerate(self.measurement_scenario.M):
-                intersection: np.ndarray = np.intersect1d(ctx1, ctx2)
+                intersection: ndarray = np.intersect1d(ctx1, ctx2)
                 if intersection.size == 0 or ctx1 == ctx2:
                     continue
 
@@ -299,7 +300,7 @@ class EmpiricalModel:
 
         return {"SF": SF, "NSF": NSF, "h_NS": EmpiricalModel(MS, h_NS.value)}
 
-    def compute_cf(self, eta: float = 0, solver: Union[str, None] = "MOSEK", verbose: bool = False) -> Dict[str, float]:
+    def compute_cf(self, eta: float = 0, solver: str = "MOSEK", verbose: bool = False) -> Dict[str, float]:
         """
         Compute the Non-Contextual Fraction (NCF) of an empirical model.
 
@@ -387,7 +388,7 @@ class EmpiricalModel:
             raise ValueError(f"Other is not an empirical model : {type(other)}")
 
         if self.measurement_scenario != other.measurement_scenario:
-            raise EmpiricalModel.WrongMeasurementScenarioError("Other is not in the same Measurement Scenario")
+            raise ValueError("Other is not in the same Measurement Scenario")
 
         return EmpiricalModel(self.measurement_scenario, self.vector + other.vector)
 
