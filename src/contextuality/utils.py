@@ -39,7 +39,7 @@ def polytope_to_H(D: np.ndarray) -> np.array:
     return H
 
 
-def NC_polytope(MS: MeasurementScenario, representation: str = "V") \
+def nc_polytope(MS: MeasurementScenario, representation: str = "V") \
         -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """
     Polytope for the Non-Contextual set.
@@ -119,7 +119,7 @@ def signalling_polytope(MS: MeasurementScenario, include_NS_polytope: bool = Tru
     if include_NS_polytope:
         return D
 
-    NS_P = NC_polytope(MS)
+    NS_P = nc_polytope(MS)
     D = np.array([row for row in D if not (row == NS_P).all(axis=1).any()])
 
     return D
@@ -193,7 +193,7 @@ def compute_deterministic_fraction(empirical_model: EmpiricalModel,
     :rtype: Dict[str, float]
     """
     ve = empirical_model.vector
-    D = NC_polytope(empirical_model.measurement_scenario)
+    D = nc_polytope(empirical_model.measurement_scenario)
 
     # Then use linear programming to obtain the deterministic fraction
     c = cp.Variable(D.shape[0], nonneg=True)
@@ -229,7 +229,7 @@ def compute_NCF_Winter(empirical_model: EmpiricalModel, solver: str = "MOSEK", v
     return {"opt_sol": b.value, "NCF": prob.value, "CF": 1 - prob.value}
 
 
-def compute_max_CF(MS: MeasurementScenario, sigma: float, eta: float, big_m: float = 2, solver: Optional[str] = "MOSEK",
+def compute_max_cf(MS: MeasurementScenario, sigma: float, eta: float, big_m: float = 2, solver: Optional[str] = "MOSEK",
                    verbose: Optional[bool] = False) -> Dict[str, Any]:
     """
     LP to find the maximum distance between two empirical models.
@@ -254,7 +254,7 @@ def compute_max_CF(MS: MeasurementScenario, sigma: float, eta: float, big_m: flo
     nb_contexts = len(MS.M)
     nb_entries = len(MS.M) * nb_outcomes
 
-    ineq = NC_polytope(MS, representation="H")
+    ineq = nc_polytope(MS, representation="H")
 
     D = signalling_polytope(MS)
 

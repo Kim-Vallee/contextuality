@@ -2,7 +2,9 @@ import numpy as np
 
 from contextuality.empirical_model import *
 from contextuality.measurement_scenario import *
-from contextuality.constants import EMPIRICAL_MODELS
+from contextuality.constants import *
+from contextuality.utils import *
+from contextuality.printing import *
 import qutip
 from qutip import ket2dm, identity, basis
 
