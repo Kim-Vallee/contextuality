@@ -190,7 +190,7 @@ class EmpiricalModel:
 
         return maximum
 
-    def compatibility_of_marginals_constraints(self, EM_vector: cp.Variable) -> List:
+    def _compatibility_of_marginals_constraints(self, EM_vector: cp.Variable) -> List:
         """
         Generate compatibility of marginals constraints on an empirical model vector as a Variable of cvxpy.
 
@@ -289,7 +289,7 @@ class EmpiricalModel:
         for i in range(0, nb_entries, nb_outcomes):
             constraints += [cp.sum(h_NS[i: i + nb_outcomes]) == z]
 
-        constraints += self.compatibility_of_marginals_constraints(h_NS)
+        constraints += self._compatibility_of_marginals_constraints(h_NS)
 
         prob = cp.Problem(cp.Maximize(z), constraints)
         prob.solve(solver=solver, verbose=verbose)
