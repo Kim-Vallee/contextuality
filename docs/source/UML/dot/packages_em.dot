@@ -1,0 +1,7 @@
+digraph "packages_em" {
+rankdir=BT
+charset="utf-8"
+"contextuality.empirical_model" [color="black", label=<contextuality.empirical_model>, shape="box", style="solid"];
+"contextuality.utils" [color="black", label=<contextuality.utils>, shape="box", style="solid"];
+"contextuality.utils" -> "contextuality.empirical_model" [arrowhead="open", arrowtail="none"];
+}

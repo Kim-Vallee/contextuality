@@ -1,0 +1,15 @@
+digraph "packages" {
+rankdir=BT
+charset="utf-8"
+"contextuality" [color="black", label=<contextuality>, shape="box", style="solid"];
+"contextuality.empirical_model" [color="black", label=<contextuality.empirical_model>, shape="box", style="solid"];
+"contextuality.measurement_scenario" [color="black", label=<contextuality.measurement_scenario>, shape="box", style="solid"];
+"contextuality.utils" [color="black", label=<contextuality.utils>, shape="box", style="solid"];
+"contextuality" -> "contextuality.empirical_model" [arrowhead="open", arrowtail="none"];
+"contextuality" -> "contextuality.measurement_scenario" [arrowhead="open", arrowtail="none"];
+"contextuality.empirical_model" -> "contextuality.measurement_scenario" [arrowhead="open", arrowtail="none"];
+"contextuality.measurement_scenario" -> "contextuality.empirical_model" [arrowhead="open", arrowtail="none"];
+"contextuality.measurement_scenario" -> "contextuality.utils" [arrowhead="open", arrowtail="none"];
+"contextuality.utils" -> "contextuality.empirical_model" [arrowhead="open", arrowtail="none"];
+"contextuality.utils" -> "contextuality.measurement_scenario" [arrowhead="open", arrowtail="none"];
+}

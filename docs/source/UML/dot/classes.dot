@@ -1,0 +1,100 @@
+digraph "classes" {
+  rankdir=BT
+  charset="utf-8"
+
+  "contextuality.empirical_model.EmpiricalModel" [
+    color="blue"
+    fontcolor="black"
+    fontname="Courier"
+    shape=plain
+    label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+        <TR><TD ALIGN="CENTER"><B>EmpiricalModel</B></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">
+is_deterministic : bool<BR/>
+is_valid : bool<BR/>
+measurement_scenario : MeasurementScenario<BR/>
+mvector : ndarray<BR/>
+vector : ndarray
+        </TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">
+compute_cf(eta: float, solver: str, verbose: bool): Dict[str, float]<BR/>
+compute_sf(solver: str, verbose: bool): Dict[str, Any]<BR/>
+get_signalling_variables(): Tuple[dict, ndarray]<BR/>
+maximum_incompatibility_of_marginals(): float<BR/>
+probability_outcome(outcome: int, ctx: List[int], observable: int): float<BR/>
+quantum_realisation(rho: ndarray, meas: ndarray): None
+        </TD></TR>
+      </TABLE>
+    >
+  ];
+
+  "contextuality.measurement_scenario.GeneralizedMeasurementScenario" [
+    color="black"
+    fontcolor="black"
+    fontname="Courier"
+    shape=plain
+    label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+        <TR><TD ALIGN="CENTER"><B>GeneralizedMeasurementScenario</B></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">
+ME : dict<BR/>
+PE : dict<BR/>
+incidence_matrix : ndarray
+        </TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">
+        </TD></TR>
+      </TABLE>
+    >
+  ];
+
+  "contextuality.measurement_scenario.MeasurementScenario" [
+    color="black"
+    fontcolor="black"
+    fontname="Courier"
+    shape=plain
+    label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+        <TR><TD ALIGN="CENTER"><B>MeasurementScenario</B></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">
+M : List[List[Union[Symbol, int]]]<BR/>
+O : List[int]<BR/>
+X : List[Union[Symbol, int]]<BR/>
+all_outcomes : List[Tuple[int]]<BR/>
+incidence_matrix : ndarray<BR/>
+incidence_matrix_constrained : ndarray<BR/>
+incidence_matrix_signalling : ndarray<BR/>
+outcomes_global : List[List[int]]
+        </TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">
+generate_deterministic(positions: Iterable[int]): ndarray
+        </TD></TR>
+      </TABLE>
+    >
+  ];
+
+  "contextuality.measurement_scenario.MeasurementScenarioImplementations" [
+    color="black"
+    fontcolor="black"
+    fontname="Courier"
+    shape=plain
+    label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+        <TR><TD ALIGN="CENTER"><B>MeasurementScenarioImplementations</B></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">
+        </TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">
+CHSH(): MeasurementScenario<BR/>
+KCBS(): MeasurementScenario<BR/>
+PeresMermin(): MeasurementScenario
+        </TD></TR>
+      </TABLE>
+    >
+  ];
+
+  "contextuality.measurement_scenario.GeneralizedMeasurementScenario" -> "contextuality.measurement_scenario.MeasurementScenario" [
+    arrowhead="empty"
+    arrowtail="none"
+  ];
+}
+
