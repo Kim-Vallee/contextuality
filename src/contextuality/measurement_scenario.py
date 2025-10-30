@@ -20,6 +20,7 @@ from sympy import Symbol, Expr, sympify, Basic
 from sympy.parsing.sympy_parser import parse_expr
 
 import numpy as np
+from numpy import ndarray
 from matplotlib import pyplot as plt
 
 int_or_symbol = Union[int, Symbol, str]
@@ -49,19 +50,31 @@ class MeasurementScenario:
             raise TypeError("The measurement should have consistent types.")
 
         if isinstance(X[0], str):
-            self.X = [Symbol(x) for x in X]
-            self.M = [[parse_expr(mx) for mx in l] for l in M]
+            self._X = [Symbol(x) for x in X]
+            self._M = [[parse_expr(mx) for mx in l] for l in M]
             if any(any(any(symb not in self.X for symb in mx.free_symbols) for mx in m) for m in self.M):
                 raise ValueError("One of the variable in the contexts is not recognized. Are all variables also in X ?")
         else:
-            self.X = X
-            self.M = M
-        self.O = O
+            self._X = X
+            self._M = M
+        self._O = O
 
         self._incidence_matrix = None
         self._incidence_matrix_constrained = None
         self._incidence_matrix_signalling = None
         self._all_outcomes = list(itertools.product(self.O, repeat=len(M[0])))
+
+    @property
+    def X(self) -> List[Union[Symbol, int]]:
+        return self._X
+
+    @property
+    def M(self) -> List[List[Union[Symbol, int]]]:
+        return self._M
+
+    @property
+    def O(self) -> List[int]:
+        return self._O
 
     @property
     def outcomes_global(self) -> List[List[int]]:
@@ -74,7 +87,7 @@ class MeasurementScenario:
         return list(itertools.product(self.O, repeat=len(self.X)))
 
     @property
-    def incidence_matrix(self):
+    def incidence_matrix(self) -> ndarray:
         """
         Accessor for the incidence matrix.
 
@@ -119,7 +132,7 @@ class MeasurementScenario:
         return self._incidence_matrix
 
     @property
-    def incidence_matrix_constrained(self):
+    def incidence_matrix_constrained(self) -> ndarray:
         """
         Accessor for an incidence matrix that takes into account incompatible measurements.
 
@@ -159,7 +172,7 @@ class MeasurementScenario:
         return self._incidence_matrix_constrained
 
     @property
-    def incidence_matrix_signalling(self):
+    def incidence_matrix_signalling(self) -> ndarray:
         if self._incidence_matrix_signalling is not None:
             return self._incidence_matrix_signalling
 
@@ -188,7 +201,7 @@ class MeasurementScenario:
         """
         return self._all_outcomes
 
-    def generate_deterministic(self, positions: Iterable[int]) -> np.ndarray:
+    def generate_deterministic(self, positions: Iterable[int]) -> ndarray:
         empirical_vector = np.zeros((len(self.M), len(self.all_outcomes)))
         for i, pos in enumerate(positions):
             empirical_vector[i, pos] = 1
@@ -287,7 +300,7 @@ class GeneralizedMeasurementScenario(MeasurementScenario):
         return sanitized_dict
 
     @property
-    def incidence_matrix(self):
+    def incidence_matrix(self) -> ndarray:
         return super().incidence_matrix
 
 

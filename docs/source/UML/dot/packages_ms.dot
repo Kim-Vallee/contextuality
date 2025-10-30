@@ -1,0 +1,8 @@
+digraph "packages_ms" {
+rankdir=BT
+charset="utf-8"
+"contextuality.measurement_scenario" [color="black", label=<contextuality.measurement_scenario>, shape="box", style="solid"];
+"contextuality.utils" [color="black", label=<contextuality.utils>, shape="box", style="solid"];
+"contextuality.measurement_scenario" -> "contextuality.utils" [arrowhead="open", arrowtail="none"];
+"contextuality.utils" -> "contextuality.measurement_scenario" [arrowhead="open", arrowtail="none"];
+}

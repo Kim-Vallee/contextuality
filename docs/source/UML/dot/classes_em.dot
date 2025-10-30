@@ -1,0 +1,18 @@
+digraph "classes_em" {
+  rankdir=BT
+  charset="utf-8"
+
+  "contextuality.empirical_model.EmpiricalModel" [
+    color="black",
+    fontcolor="black",
+    fontname="Courier",
+    shape=plain,
+    label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+        <TR><TD ALIGN="CENTER" WIDTH="630"><B>EmpiricalModel</B></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">is_deterministic : bool<BR/>is_valid : bool<BR/>measurement_scenario : MeasurementScenario<BR/>mvector : ndarray<BR/>vector : ndarray</TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">compute_cf(eta: float, solver: str, verbose: bool): Dict[str, float]<BR/>compute_sf(solver: str, verbose: bool): Dict[str, Any]<BR/>get_signalling_variables(): Tuple[dict, ndarray]<BR/>maximum_incompatibility_of_marginals(): float<BR/>probability_outcome(outcome: int, ctx: List[int], observable: int): float<BR/>quantum_realisation(rho: ndarray, meas: ndarray): None</TD></TR>
+      </TABLE>
+    >
+  ];
+}

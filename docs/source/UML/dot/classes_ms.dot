@@ -1,0 +1,51 @@
+digraph "classes_ms" {
+  rankdir=BT
+  charset="utf-8"
+
+  "contextuality.measurement_scenario.GeneralizedMeasurementScenario" [
+    color="black",
+    fontcolor="black",
+    fontname="Courier",
+    shape=plain,
+    label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+        <TR><TD ALIGN="CENTER" WIDTH="300"><B>GeneralizedMeasurementScenario</B></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">ME : dict<BR/>PE : dict<BR/>incidence_matrix : ndarray</TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT"></TD></TR>
+      </TABLE>
+    >
+  ];
+
+  "contextuality.measurement_scenario.MeasurementScenario" [
+    color="black",
+    fontcolor="black",
+    fontname="Courier",
+    shape=plain,
+    label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+        <TR><TD ALIGN="CENTER" WIDTH="500"><B>MeasurementScenario</B></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">M : List[List[Union[Symbol, int]]]<BR/>O : List[int]<BR/>X : List[Union[Symbol, int]]<BR/>all_outcomes : List[Tuple[int]]<BR/>incidence_matrix : ndarray<BR/>incidence_matrix_constrained : ndarray<BR/>incidence_matrix_signalling : ndarray<BR/>outcomes_global : List[List[int]]</TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">generate_deterministic(positions: Iterable[int]): ndarray</TD></TR>
+      </TABLE>
+    >
+  ];
+
+  "contextuality.measurement_scenario.MeasurementScenarioImplementations" [
+    color="black",
+    fontcolor="black",
+    fontname="Courier",
+    shape=plain,
+    label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+        <TR><TD ALIGN="CENTER" WIDTH="300"><B>MeasurementScenarioImplementations</B></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT"></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">CHSH(): MeasurementScenario<BR/>KCBS(): MeasurementScenario<BR/>PeresMermin(): MeasurementScenario</TD></TR>
+      </TABLE>
+    >
+  ];
+
+  "contextuality.measurement_scenario.GeneralizedMeasurementScenario" -> "contextuality.measurement_scenario.MeasurementScenario" [
+    arrowhead="empty",
+    arrowtail="none"
+  ];
+}
