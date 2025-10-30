@@ -24,7 +24,7 @@ from contextuality.measurement_scenario import MeasurementScenario
 __cache_NC_polytope_H = {}
 
 
-def polytope_to_H(D: np.ndarray) -> np.array:
+def polytope_to_h(D: np.ndarray) -> np.array:
     """
     Converts a polytope in V representation to H representation.
 
@@ -76,7 +76,7 @@ def nc_polytope(MS: MeasurementScenario, representation: str = "V") \
     __cache_NC_polytope_H[(X_hash, M_hash, O_hash)] = __cache_NC_polytope_H.get((X_hash, M_hash, O_hash),
                                                                                 None)
     if __cache_NC_polytope_H[(X_hash, M_hash, O_hash)] is None:
-        __cache_NC_polytope_H[(X_hash, M_hash, O_hash)] = polytope_to_H(D)
+        __cache_NC_polytope_H[(X_hash, M_hash, O_hash)] = polytope_to_h(D)
 
     H = __cache_NC_polytope_H[(X_hash, M_hash, O_hash)]
     if representation == "H":
@@ -209,7 +209,7 @@ def compute_deterministic_fraction(empirical_model: EmpiricalModel,
     return {"OD": OD, "NOD": 1 - OD}
 
 
-def compute_NCF_Winter(empirical_model: EmpiricalModel, solver: str = "MOSEK", verbose: bool = False) \
+def compute_ncf_winter(empirical_model: EmpiricalModel, solver: str = "MOSEK", verbose: bool = False) \
         -> Dict[str, float]:
     MS = empirical_model.measurement_scenario
     ve = empirical_model.vector
@@ -346,7 +346,7 @@ def compute_max_cf(MS: MeasurementScenario, sigma: float, eta: float, big_m: flo
     return {"EmpiricalModel": EmpiricalModel(MS, max_violation_vector), "max_violation": max_violation}
 
 
-def get_bound_Winter(MS: MeasurementScenario, lambdas: Optional[np.ndarray] = None,
+def get_bound_winter(MS: MeasurementScenario, lambdas: Optional[np.ndarray] = None,
                      bound_type: Optional[str] = "classical",
                      epsilon: Optional[float] = 0,
                      solver: Optional[str] = "MOSEK",
@@ -410,7 +410,7 @@ def get_bound_Winter(MS: MeasurementScenario, lambdas: Optional[np.ndarray] = No
     return {"classical_bound": prob.value, "Xi": Xi.value}
 
 
-def get_bound_Winter_epsilon(MS: MeasurementScenario, epsilon: float = 0):
+def get_bound_winter_epsilon(MS: MeasurementScenario, epsilon: float = 0):
     # Very slow, since it makes all the possible assignments.
     O, X, M = MS.O, MS.X, MS.M
     nb_projectors = len(X)
