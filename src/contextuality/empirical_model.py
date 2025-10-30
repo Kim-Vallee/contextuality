@@ -13,7 +13,7 @@
 # that they have been altered from the originals.
 
 import itertools
-from typing import Optional, Iterable, Union, Tuple, List
+from typing import Optional, Iterable, Union, Tuple, List, Dict, Any
 
 import cvxpy as cp
 import numpy as np
@@ -160,7 +160,7 @@ class EmpiricalModel:
         Compute the probability of an outcome given a context and an observable.
 
         :param outcome: represents the outcome of the observable (p(outcome | observable_ctx1))
-        :param ctx1: represents the context of the observable
+        :param ctx: represents the context of the observable
         :param observable: represents the observable
         :return: the probability of the outcome given the context and the observable
         """
@@ -188,7 +188,116 @@ class EmpiricalModel:
 
         return maximum
 
-    def compute_NCF(self, eta: float = 0, solver: Union[str, None] = "MOSEK", verbose: bool = False) -> dict:
+    def compatibility_of_marginals_constraints(self, EM_vector: cp.Variable) -> List:
+        """
+        Generate compatibility of marginals constraints on an empirical model vector as a Variable of cvxpy.
+
+        :param EM_vector: Empirical Model vectorial representation.
+        :type EM_vector: cp.Variable
+        :return: A list of constraints on EM_vector to respect the compatibility of marginals.
+        :rtype: List
+        """
+        O, M = self.measurement_scenario.O, self.measurement_scenario.M
+        outcomes = list(itertools.product(O, repeat=len(M[0])))
+        nb_outcomes = len(outcomes)
+        constraints = []
+        # Compatibility of marginals TODO: improve the loop perf
+        for i, ctx1 in enumerate(M):
+            for j, ctx2 in enumerate(M):
+                if ctx1 == ctx2:
+                    continue
+                # Also counting same elements, useless
+                intersection = np.intersect1d(ctx1, ctx2, return_indices=False)
+                if intersection.size > 0:
+                    # Note the intersection value (is it A0, A1 ...)
+                    intersection_value = int(intersection[0])
+
+                    # Find the position in the context (if we are looking for A1 in A0A1 and in A1A2 then i_ctx1 = 1 and
+                    # j_ctx2 = 0)
+                    i_ctx1 = ctx1.index(intersection_value)
+                    j_ctx2 = ctx2.index(intersection_value)
+
+                    # Note the position of the values to sum
+                    ctx_1_indices: List[List[int]] = [[] for _ in range(len(O))]
+                    ctx_2_indices: List[List[int]] = [[] for _ in range(len(O))]
+                    for k, outcome in enumerate(outcomes):
+                        ctx_1_indices[outcome[i_ctx1]].append(k)
+                        ctx_2_indices[outcome[j_ctx2]].append(k)
+
+                    # Finally get the context and add the constraint
+                    h_NS_ctx1 = EM_vector[i * nb_outcomes: (i + 1) * nb_outcomes]
+                    h_NS_ctx2 = EM_vector[j * nb_outcomes: (j + 1) * nb_outcomes]
+
+                    for ind1, ind2 in zip(ctx_1_indices, ctx_2_indices):
+                        m_ctx1 = cp.Constant(0)
+                        m_ctx2 = cp.Constant(0)
+                        for ind11, ind21 in zip(ind1, ind2):
+                            m_ctx1 += h_NS_ctx1[ind11]
+                            m_ctx2 += h_NS_ctx2[ind21]
+
+                        constraints += [m_ctx1 == m_ctx2]
+        return constraints
+
+    def compute_SF(self, solver: str = "MOSEK", verbose: bool = False) -> Dict[str, Any]:
+        """
+        Computes the signaling fraction from an empirical model and a MeasurementScenario.
+
+        :param solver: Solver for cvxpy. Defaults to "MOSEK".
+        :param verbose: Whether the solver should verbose. Defaults to False.
+        :return: Signalling and non-signalling fractions
+        """
+
+        # The idea is to try to describe the empirical model
+        # as a decomposition of no-signaling and signaling
+        # and to maximize the no-signaling fraction which is
+        # very close to the non-contextual fraction.
+        # In other words I assume that the empirical model
+        # is a sum of two hidden variable models, one that
+        # is signaling and one that is not.
+
+        MS = self.measurement_scenario
+        ve = self.vector
+
+        # Problem formulation :
+        # Minimize distance (v_e, \lambda * h_NS)
+        # constraints :
+        # h_NS must respect the compatibility of marginals
+        # v_e >= h_NS
+        # \lambda * sum(h_NS[row]) = 1
+        # 0 <= lambda <= 1
+
+        O, M = MS.O, MS.M
+
+        outcomes = list(itertools.product(O, repeat=len(M[0])))
+        nb_outcomes = len(outcomes)
+        nb_entries = ve.size
+
+        # em = 1-\sigma h + \sigma h'
+        # em >= (1 - \sigma) h
+
+        h_NS = cp.Variable(nb_entries)
+
+        constraints = [h_NS >= cp.Constant(0)]
+
+        constraints += [ve >= h_NS]
+
+        z = cp.Variable(1, nonneg=True)
+
+        # Forces the normalization with respect to lambda
+        for i in range(0, nb_entries, nb_outcomes):
+            constraints += [cp.sum(h_NS[i: i + nb_outcomes]) == z]
+
+        constraints += self.compatibility_of_marginals_constraints(h_NS)
+
+        prob = cp.Problem(cp.Maximize(z), constraints)
+        prob.solve(solver=solver, verbose=verbose)
+
+        NSF = z.value[0]
+        SF = 1 - NSF
+
+        return {"SF": SF, "NSF": NSF, "h_NS": EmpiricalModel(MS, h_NS.value)}
+
+    def compute_CF(self, eta: float = 0, solver: Union[str, None] = "MOSEK", verbose: bool = False) -> Dict[str, float]:
         """
         Compute the Non-Contextual Fraction (NCF) of an empirical model.
 
