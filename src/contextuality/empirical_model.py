@@ -160,7 +160,7 @@ class EmpiricalModel:
         Compute the probability of an outcome given a context and an observable.
 
         :param outcome: represents the outcome of the observable (p(outcome | observable_ctx1))
-        :param ctx1: represents the context of the observable
+        :param ctx: represents the context of the observable
         :param observable: represents the observable
         :return: the probability of the outcome given the context and the observable
         """
