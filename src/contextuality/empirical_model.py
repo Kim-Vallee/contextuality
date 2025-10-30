@@ -13,7 +13,7 @@
 # that they have been altered from the originals.
 
 import itertools
-from typing import Optional, Iterable, Union, Tuple, List, Dict, Any
+from typing import Optional, Iterable, Union, Tuple, List, Dict, Any, Self
 
 import cvxpy as cp
 import numpy as np
@@ -130,6 +130,7 @@ class EmpiricalModel:
 
         self._vector = np.real(np.array(empirical_model))
 
+    # noinspection PyTupleAssignmentBalance
     def get_signalling_variables(self) -> Tuple[dict, np.ndarray]:
         assert self.is_deterministic, "The model must be deterministic"
         observables_values = {x: None for x in self.measurement_scenario.X}
@@ -173,6 +174,7 @@ class EmpiricalModel:
         outcomes = self.measurement_scenario.all_outcomes
         return sum([vector[ctx_index][i] for i, o in enumerate(outcomes) if o[ctx.index(observable)] == outcome])
 
+    # noinspection PyTypeChecker
     def maximum_incompatibility_of_marginals(self) -> float:
         maximum = 0
         for i, ctx1 in enumerate(self.measurement_scenario.M):
@@ -238,7 +240,7 @@ class EmpiricalModel:
                         constraints += [m_ctx1 == m_ctx2]
         return constraints
 
-    def compute_SF(self, solver: str = "MOSEK", verbose: bool = False) -> Dict[str, Any]:
+    def compute_sf(self, solver: str = "MOSEK", verbose: bool = False) -> Dict[str, Any]:
         """
         Computes the signaling fraction from an empirical model and a MeasurementScenario.
 
@@ -297,7 +299,7 @@ class EmpiricalModel:
 
         return {"SF": SF, "NSF": NSF, "h_NS": EmpiricalModel(MS, h_NS.value)}
 
-    def compute_CF(self, eta: float = 0, solver: Union[str, None] = "MOSEK", verbose: bool = False) -> Dict[str, float]:
+    def compute_cf(self, eta: float = 0, solver: Union[str, None] = "MOSEK", verbose: bool = False) -> Dict[str, float]:
         """
         Compute the Non-Contextual Fraction (NCF) of an empirical model.
 
@@ -307,7 +309,7 @@ class EmpiricalModel:
         :return: The NCF, CF and the optimal description by NC model.
         """
         if eta == 0:
-            return self._compute_NCF_deterministic(solver, verbose)
+            return self._compute_cf_deterministic(solver, verbose)
 
         ms = self.measurement_scenario
         ve = self.vector
@@ -331,7 +333,7 @@ class EmpiricalModel:
         return {"opt_sol_nc": b_nc.value, "opt_sol_s": b.value, "NCF": prob.value, "CF": 1 - prob.value,
                 "behaviour": incidence_matrix_signalling @ b.value + incidence_matrix @ b_nc.value}
 
-    def _compute_NCF_deterministic(self, solver: Union[str, None] = "MOSEK", verbose: bool = False):
+    def _compute_cf_deterministic(self, solver: Union[str, None] = "MOSEK", verbose: bool = False):
         ms = self.measurement_scenario
         ve = self.vector
 
@@ -350,7 +352,7 @@ class EmpiricalModel:
 
         return {"opt_sol": b.value, "NCF": prob.value, "CF": 1 - prob.value}
 
-    def __mul__(self, other: Union[int, float]):
+    def __mul__(self, other: Union[int, float]) -> "EmpiricalModel":
         """
         Define the multiplication with a float or int.
 
@@ -363,7 +365,7 @@ class EmpiricalModel:
             raise ValueError(f"Other can only be of type int or float and it is : {type(other)}")
         return EmpiricalModel(self.measurement_scenario, other * self.vector)
 
-    def __rmul__(self, other):
+    def __rmul__(self, other) -> "EmpiricalModel":
         return self.__mul__(other)
 
     def __truediv__(self, other):
