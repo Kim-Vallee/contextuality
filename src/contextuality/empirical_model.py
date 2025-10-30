@@ -28,14 +28,12 @@ class EmpiricalModel:
         def __init__(self, msg):
             super().__init__(msg)
 
-    def __init__(self, measurement_scenario: MeasurementScenario, empirical_model: Optional[np.ndarray] = None):
+    def __init__(self, measurement_scenario: MeasurementScenario, empirical_model: Optional[List] = None):
         """
         Constructor for EmpiricalModel.
 
         :param measurement_scenario: The measurement scenario associated to such a model.
-        :type measurement_scenario: MeasurementScenario
         :param empirical_model: The empirical model vectorial representation. Defaults to None.
-        :type empirical_model: np.ndarray
         """
         self._meas = None
         self._rho = None
@@ -294,3 +292,9 @@ class EmpiricalModel:
 
     def __repr__(self):
         return self.__str__()
+
+    def __eq__(self, other):
+        if isinstance(other, EmpiricalModel):
+            return other.measurement_scenario == self.measurement_scenario and (other.vector == self.vector).all()
+
+        return False

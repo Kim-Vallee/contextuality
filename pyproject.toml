@@ -1,32 +1,29 @@
-[project]
+[tool.poetry]
 name = "contextuality"
 version = "1.0.2"
 description = "Contextuality is a package that allows to compute various contextuality related quantities and formalize scenarios in quantum theory."
 authors = [
-    {name = "Kim Vallée", email = "kim.vallee@protonmail.com"},
-    {name = "Adel Sohbi"}
+    "Kim Vallée <kim.vallee@protonmail.com>",
+    "Adel Sohbi"
 ]
 license = "CC BY-NC 4.0"
 readme = "README.md"
-requires-python = ">=3.11,<3.14"
-dependencies = [
-    "cvxpy (>=1.7.3,<2.0.0)",
-    "mosek (>=11.0.29,<12.0.0)",
-    "notebook (>=7.4.7,<8.0.0)",
-    "matplotlib (>=3.10.7,<4.0.0)",
-    "numpy (>=2.3.4,<3.0.0)",
-    "scipy (>=1.16.2,<2.0.0)",
-    "pycddlib (>=3.0.2,<4.0.0)",
-    "sympy (>=1.14.0,<2.0.0)",
-    "tabulate (>=0.9.0,<0.10.0)",
-    "tqdm (>=4.67.1,<5.0.0)",
-    "prettytable (>=3.16.0,<4.0.0)",
-]
 keywords = ["python", "contextual-fraction", "contextuality"]
+packages = [{ include = "contextuality", from = "src" }]
 
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+[tool.poetry.dependencies]
+python = ">=3.11,<3.14"
+cvxpy = ">=1.7.3,<2.0.0"
+mosek = ">=11.0.29,<12.0.0"
+notebook = ">=7.4.7,<8.0.0"
+matplotlib = ">=3.10.7,<4.0.0"
+numpy = ">=2.3.4,<3.0.0"
+scipy = ">=1.16.2,<2.0.0"
+pycddlib = ">=3.0.2,<4.0.0"
+sympy = ">=1.14.0,<2.0.0"
+tabulate = ">=0.9.0,<0.10.0"
+tqdm = ">=4.67.1,<5.0.0"
+prettytable = ">=3.16.0,<4.0.0"
 
 [tool.poetry.group.dev.dependencies]
 sphinx = "^8.2.3"
@@ -34,6 +31,10 @@ sphinx-rtd-theme = "^3.0.2"
 qutip = "^5.2.1"
 pytest = ">=8.4.2,<9.0.0"
 highspy = "^1.12.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.requires-plugins]
 poetry-plugin-export = ">=1.8"
