@@ -295,6 +295,6 @@ class EmpiricalModel:
 
     def __eq__(self, other):
         if isinstance(other, EmpiricalModel):
-            return other.measurement_scenario == self.measurement_scenario and other.vector == self.vector
+            return other.measurement_scenario == self.measurement_scenario and (other.vector == self.vector).all()
 
         return False
