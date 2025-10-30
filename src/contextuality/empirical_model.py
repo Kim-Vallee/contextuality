@@ -373,7 +373,7 @@ class EmpiricalModel:
             raise ValueError(f"Can't divide by a non scalar : {type(other)}")
         return EmpiricalModel(self.measurement_scenario, self.vector / other)
 
-    def __add__(self, other: 'EmpiricalModel'):
+    def __add__(self, other: 'EmpiricalModel') -> "EmpiricalModel":
         """
         Define the addition when other is an Empirical model.
 
