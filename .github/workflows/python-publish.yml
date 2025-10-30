@@ -31,3 +31,4 @@ jobs:
         uses: JRubics/poetry-publish@v2.1
         with:
           pypi_token: ${{ secrets.PYPI_TOKEN }}
+          extra_build_dependency_packages: "libcdd-dev libgmp-dev"
