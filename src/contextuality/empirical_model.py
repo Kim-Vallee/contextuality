@@ -22,11 +22,13 @@ from numpy.typing import NDArray
 
 from contextuality.measurement_scenario import MeasurementScenario
 
+ArrayLike = Union[List, NDArray]
+
 
 class EmpiricalModel:
     """ Empirical model class, that is a simple holder for an array, and the way to generate them """
 
-    def __init__(self, measurement_scenario: MeasurementScenario, empirical_model: Optional[List, NDArray] = None):
+    def __init__(self, measurement_scenario: MeasurementScenario, empirical_model: Optional[ArrayLike] = None):
         """
         Constructor for EmpiricalModel.
 
@@ -101,7 +103,7 @@ class EmpiricalModel:
         """
         return self.vector.reshape(len(self.measurement_scenario.M), len(self.measurement_scenario.all_outcomes))
 
-    def quantum_realisation(self, rho: Union[NDArray, List], meas: Union[NDArray, List]) -> None:
+    def quantum_realisation(self, rho: ArrayLike, meas: ArrayLike) -> None:
         r"""
         Compute an empirical model/behavior from a provided quantum realization.
 
@@ -130,7 +132,7 @@ class EmpiricalModel:
         self._vector = np.real(np.array(empirical_model))
 
     # noinspection PyTupleAssignmentBalance
-    def get_signalling_variables(self) -> Tuple[dict, Union[NDArray, List]]:
+    def get_signalling_variables(self) -> Tuple[dict, ArrayLike]:
         assert self.is_deterministic, "The model must be deterministic"
         observables_values = {x: None for x in self.measurement_scenario.X}
         observables_signalling = {x: False for x in self.measurement_scenario.X}
