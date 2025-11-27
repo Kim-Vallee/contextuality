@@ -28,6 +28,8 @@ em_kcbs_sign: EmpiricalModel
 em_kcbs_rand: EmpiricalModel
 em_kcbs_invalid: EmpiricalModel
 
+SOLVER = "highs"
+
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_globals():
@@ -265,67 +267,67 @@ def test_maximum_incompatibility_of_marginals():
 
 def test_compute_sf():
     # No signalling should have SF 0
-    sf_chsh_pr = em_chsh_pr.compute_sf()["SF"]
-    sf_kcbs_pr = em_kcbs_pr.compute_sf()["SF"]
+    sf_chsh_pr = em_chsh_pr.compute_sf(solver=SOLVER)["SF"]
+    sf_kcbs_pr = em_kcbs_pr.compute_sf(solver=SOLVER)["SF"]
     assert np.isclose(sf_chsh_pr, 0)
     assert np.isclose(sf_kcbs_pr, 0)
 
     # Fully signalling should have SF 1
-    assert np.isclose(em_chsh_sign.compute_sf()["SF"], 1)
-    assert np.isclose(em_kcbs_sign.compute_sf()["SF"], 1)
+    assert np.isclose(em_chsh_sign.compute_sf(solver=SOLVER)["SF"], 1)
+    assert np.isclose(em_kcbs_sign.compute_sf(solver=SOLVER)["SF"], 1)
 
     tol = 1e-5
     # Random empirical models should have SF between 0 and 1
-    sf_chsh_rand = em_chsh_rand.compute_sf()["SF"]
+    sf_chsh_rand = em_chsh_rand.compute_sf(solver=SOLVER)["SF"]
     assert - tol < sf_chsh_rand < 1 + tol
-    sf_kcbs_rand = em_kcbs_rand.compute_sf()["SF"]
+    sf_kcbs_rand = em_kcbs_rand.compute_sf(solver=SOLVER)["SF"]
     assert - tol < sf_kcbs_rand < 1 + tol
 
     # SF should be convex
     l = np.random.rand()
     em_chsh_convex = (1-l) * em_chsh_pr + l * em_chsh_rand
-    sf_chsh_convex = em_chsh_convex.compute_sf()["SF"]
+    sf_chsh_convex = em_chsh_convex.compute_sf(solver=SOLVER)["SF"]
     assert sf_chsh_convex <= (1-l) * sf_chsh_pr + l * sf_chsh_rand + tol
 
     em_kcbs_convex = (1-l) * em_kcbs_pr + l * em_kcbs_rand
-    sf_kcbs_convex = em_kcbs_convex.compute_sf()["SF"]
+    sf_kcbs_convex = em_kcbs_convex.compute_sf(solver=SOLVER)["SF"]
     assert sf_kcbs_convex <= (1-l) * sf_chsh_pr + l * sf_kcbs_rand + tol
 
 
 def test_compute_cf():
     # Det should have CF 0
-    cf_chsh_det = em_chsh_det.compute_cf()["CF"]
-    cf_kcbs_det = em_kcbs_det.compute_cf()["CF"]
+    cf_chsh_det = em_chsh_det.compute_cf(solver=SOLVER)["CF"]
+    cf_kcbs_det = em_kcbs_det.compute_cf(solver=SOLVER)["CF"]
     assert np.isclose(cf_chsh_det, 0)
     assert np.isclose(cf_kcbs_det, 0)
 
     # PR should have CF 1
-    cf_chsh_pr = em_chsh_pr.compute_cf()["CF"]
-    cf_kcbs_pr = em_kcbs_pr.compute_cf()["CF"]
+    cf_chsh_pr = em_chsh_pr.compute_cf(solver=SOLVER)["CF"]
+    cf_kcbs_pr = em_kcbs_pr.compute_cf(solver=SOLVER)["CF"]
     assert np.isclose(cf_chsh_pr, 1)
     assert np.isclose(cf_kcbs_pr, 1)
 
     # Fully signalling should have CF 1
-    cf_chsh_sign = em_chsh_sign.compute_cf()["CF"]
-    cf_kcbs_sign = em_kcbs_sign.compute_cf()["CF"]
+    cf_chsh_sign = em_chsh_sign.compute_cf(solver=SOLVER)["CF"]
+    cf_kcbs_sign = em_kcbs_sign.compute_cf(solver=SOLVER)["CF"]
     assert np.isclose(cf_chsh_sign, 1)
     assert np.isclose(cf_kcbs_sign, 1)
 
     tol = 1e-5
     # Random empirical models should have CF between 0 and 1
-    cf_chsh_rand = em_chsh_rand.compute_cf()["CF"]
+    cf_chsh_rand = em_chsh_rand.compute_cf(solver=SOLVER)["CF"]
     assert - tol < cf_chsh_rand < 1 + tol
-    cf_kcbs_rand = em_kcbs_rand.compute_cf()["CF"]
+    cf_kcbs_rand = em_kcbs_rand.compute_cf(solver=SOLVER)["CF"]
     assert - tol < cf_kcbs_rand < 1 + tol
 
     # CF should be convex
     l = np.random.rand()
     em_chsh_convex = (1 - l) * em_chsh_pr + l * em_chsh_rand
-    cf_chsh_convex = em_chsh_convex.compute_cf()["CF"]
+    cf_chsh_convex = em_chsh_convex.compute_cf(solver=SOLVER)["CF"]
     assert cf_chsh_convex <= (1 - l) * cf_chsh_pr + l * cf_chsh_rand + tol
 
     em_kcbs_convex = (1 - l) * em_kcbs_pr + l * em_kcbs_rand
-    cf_kcbs_convex = em_kcbs_convex.compute_cf()["CF"]
+    cf_kcbs_convex = em_kcbs_convex.compute_cf(solver=SOLVER)["CF"]
     assert cf_kcbs_convex <= (1 - l) * cf_chsh_pr + l * cf_kcbs_rand + tol
 
 
