@@ -133,7 +133,30 @@ class EmpiricalModel:
 
     # noinspection PyTupleAssignmentBalance
     def get_signalling_variables(self) -> Tuple[dict, ArrayLike]:
-        assert self.is_deterministic, "The model must be deterministic"
+        """
+        Get the signalling variables of a deterministic empirical model.
+
+        :raises ValueError: If the empirical model is not deterministic.
+
+        :return: A tuple containing a dictionary of signalling variables and an array of values per context.
+
+        Example:
+
+        >>> from contextuality import MeasurementScenarioImplementations, EmpiricalModel
+        >>> ms = MeasurementScenarioImplementations.KCBS()
+        >>> em = EmpiricalModel(ms, [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0])
+        >>> signalling_vars, values_per_context = em.get_signalling_variables()
+        >>> print(signalling_vars)
+        {0: True, 1: False, 2: False, 3: False, 4: False}
+        >>> print(values_per_context)
+        [[0. 0.]
+         [0. 0.]
+         [0. 0.]
+         [0. 0.]
+         [0. 1.]]
+        """
+        if not self.is_deterministic:
+            raise ValueError("The empirical model is not deterministic")
         observables_values = {x: None for x in self.measurement_scenario.X}
         observables_signalling = {x: False for x in self.measurement_scenario.X}
         contexts = self.measurement_scenario.M
@@ -177,6 +200,11 @@ class EmpiricalModel:
 
     # noinspection PyTypeChecker
     def maximum_incompatibility_of_marginals(self) -> float:
+        """
+        Computes the maximum difference between the marginals in different contexts.
+
+        :return: max(p(outcome|ctx1, observable) - p(outcome|ctx2, observable))
+        """
         maximum = 0
         for i, ctx1 in enumerate(self.measurement_scenario.M):
             for j, ctx2 in enumerate(self.measurement_scenario.M):
@@ -366,10 +394,10 @@ class EmpiricalModel:
             raise ValueError(f"Other can only be of type int or float and it is : {type(other)}")
         return EmpiricalModel(self.measurement_scenario, other * self.vector)
 
-    def __rmul__(self, other) -> "EmpiricalModel":
+    def __rmul__(self, other: Union[int, float]) -> "EmpiricalModel":
         return self.__mul__(other)
 
-    def __truediv__(self, other):
+    def __truediv__(self, other: Union[int, float]) -> "EmpiricalModel":
         if not (isinstance(other, float) or isinstance(other, int)):
             raise ValueError(f"Can't divide by a non scalar : {type(other)}")
         return EmpiricalModel(self.measurement_scenario, self.vector / other)
