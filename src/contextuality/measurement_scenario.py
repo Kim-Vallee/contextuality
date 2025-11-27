@@ -79,10 +79,14 @@ class MeasurementScenario:
     @property
     def outcomes_global(self) -> List[List[int]]:
         """
-        Gives all the possible variable attributions. For the CHSH scenario it corresponds to:
-        [A,A',B,B']: [0,0,0,0], [0,0,0,1], [0,0,1,0], [0,0,1,1], [0,1,0,0], ...
+        Gives all the possible outcomes attributions.
 
         :return: A list of lists of attributions.
+
+        Example:
+        >>> ms = MeasurementScenarioImplementations.CHSH()
+        >>> ms.outcomes_global
+        [0,0,0,0], [0,0,0,1], [0,0,1,0], [0,0,1,1], [0,1,0,0], ...
         """
         return list(itertools.product(self.O, repeat=len(self.X)))
 
@@ -92,7 +96,6 @@ class MeasurementScenario:
         Accessor for the incidence matrix.
 
         :return: the incidence matrix
-        :rtype: np.ndarray
         """
         if self._incidence_matrix is not None:
             return self._incidence_matrix
