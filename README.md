@@ -34,9 +34,9 @@ $ poetry build
 $ python -m pip install dist/contextuality-<version>-py3-none-any.whl
 ```
 
-### Developers
+### Contribute
 
-If you wish to improve the package you can install from the sources with poetry:
+If you wish to improve the package you can install from the sources with poetry and make pull requests:
 ```shell
 $ git clone https://github.com/Kim-Vallee/contextuality.git
 $ cd contextuality
