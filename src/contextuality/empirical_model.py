@@ -18,14 +18,17 @@ from typing import Optional, Iterable, Union, Tuple, List, Dict, Any, Self
 import cvxpy as cp
 import numpy as np
 from numpy import ndarray
+from numpy.typing import NDArray
 
 from contextuality.measurement_scenario import MeasurementScenario
+
+ArrayLike = Union[List, NDArray]
 
 
 class EmpiricalModel:
     """ Empirical model class, that is a simple holder for an array, and the way to generate them """
 
-    def __init__(self, measurement_scenario: MeasurementScenario, empirical_model: Optional[List] = None):
+    def __init__(self, measurement_scenario: MeasurementScenario, empirical_model: Optional[ArrayLike] = None):
         """
         Constructor for EmpiricalModel.
 
@@ -68,13 +71,12 @@ class EmpiricalModel:
             (np.sum(self.mvector, axis=1) == 1).all()
 
     @property
-    def vector(self) -> ndarray:
+    def vector(self) -> NDArray:
         """
         Accessor of the internal vectorial representation.
 
         :raises AttributeError: When no vector has been attributed yet.
         :return: The vector representation.
-        :rtype: ndarray
         """
         if self._vector is None:
             raise AttributeError("The empirical model is not defined. Please call the method quantum_realisation or "
@@ -93,7 +95,7 @@ class EmpiricalModel:
         self._vector = np.array(new_vector).flatten()
 
     @property
-    def mvector(self) -> ndarray:
+    def mvector(self) -> NDArray:
         """
         Matrix version of the vector of the empirical model.
 
@@ -101,21 +103,19 @@ class EmpiricalModel:
         """
         return self.vector.reshape(len(self.measurement_scenario.M), len(self.measurement_scenario.all_outcomes))
 
-    def quantum_realisation(self, rho: ndarray, meas: ndarray) -> None:
+    def quantum_realisation(self, rho: ArrayLike, meas: ArrayLike) -> None:
         r"""
         Compute an empirical model/behavior from a provided quantum realization.
 
         :param rho:     The quantum state density matrix.
-        :type rho:      ndarray
-        :param meas:    The measurements in a ndarray. The index are "measurement label", "outcome" to access
+        :param meas:    The measurements in an array. The indices are "measurement label", "outcome" to access
                         a specific measurement PVM. For instance, meas[0,0] accesses the PVM for measurement
                         with label X[0] and outcome O[0] respectively.
-        :type meas:     ndarray
         """
 
         # Get parameters
-        self._rho = rho
-        self._meas = meas
+        self._rho = np.array(rho)
+        self._meas = np.array(meas)
         O, M = self.measurement_scenario.O, self.measurement_scenario.M
 
         # Compute the empiral model/behavior from quantum realization.
@@ -132,8 +132,31 @@ class EmpiricalModel:
         self._vector = np.real(np.array(empirical_model))
 
     # noinspection PyTupleAssignmentBalance
-    def get_signalling_variables(self) -> Tuple[dict, ndarray]:
-        assert self.is_deterministic, "The model must be deterministic"
+    def get_signalling_variables(self) -> Tuple[dict, ArrayLike]:
+        """
+        Get the signalling variables of a deterministic empirical model.
+
+        :raises ValueError: If the empirical model is not deterministic.
+
+        :return: A tuple containing a dictionary of signalling variables and an array of values per context.
+
+        Example:
+
+        >>> from contextuality import MeasurementScenarioImplementations, EmpiricalModel
+        >>> ms = MeasurementScenarioImplementations.KCBS()
+        >>> em = EmpiricalModel(ms, [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0])
+        >>> signalling_vars, values_per_context = em.get_signalling_variables()
+        >>> print(signalling_vars)
+        {0: True, 1: False, 2: False, 3: False, 4: False}
+        >>> print(values_per_context)
+        [[0. 0.]
+         [0. 0.]
+         [0. 0.]
+         [0. 0.]
+         [0. 1.]]
+        """
+        if not self.is_deterministic:
+            raise ValueError("The empirical model is not deterministic")
         observables_values = {x: None for x in self.measurement_scenario.X}
         observables_signalling = {x: False for x in self.measurement_scenario.X}
         contexts = self.measurement_scenario.M
@@ -177,6 +200,11 @@ class EmpiricalModel:
 
     # noinspection PyTypeChecker
     def maximum_incompatibility_of_marginals(self) -> float:
+        """
+        Computes the maximum difference between the marginals in different contexts.
+
+        :return: max(p(outcome|ctx1, observable) - p(outcome|ctx2, observable))
+        """
         maximum = 0
         for i, ctx1 in enumerate(self.measurement_scenario.M):
             for j, ctx2 in enumerate(self.measurement_scenario.M):
@@ -366,10 +394,10 @@ class EmpiricalModel:
             raise ValueError(f"Other can only be of type int or float and it is : {type(other)}")
         return EmpiricalModel(self.measurement_scenario, other * self.vector)
 
-    def __rmul__(self, other) -> "EmpiricalModel":
+    def __rmul__(self, other: Union[int, float]) -> "EmpiricalModel":
         return self.__mul__(other)
 
-    def __truediv__(self, other):
+    def __truediv__(self, other: Union[int, float]) -> "EmpiricalModel":
         if not (isinstance(other, float) or isinstance(other, int)):
             raise ValueError(f"Can't divide by a non scalar : {type(other)}")
         return EmpiricalModel(self.measurement_scenario, self.vector / other)

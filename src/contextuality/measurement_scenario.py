@@ -18,6 +18,7 @@ import warnings
 from typing import List, Tuple, Iterable, Union, Dict
 from sympy import Symbol, Expr, sympify, Basic
 from sympy.parsing.sympy_parser import parse_expr
+import warnings
 
 import numpy as np
 from numpy import ndarray
@@ -79,10 +80,14 @@ class MeasurementScenario:
     @property
     def outcomes_global(self) -> List[List[int]]:
         """
-        Gives all the possible variable attributions. For the CHSH scenario it corresponds to:
-        [A,A',B,B']: [0,0,0,0], [0,0,0,1], [0,0,1,0], [0,0,1,1], [0,1,0,0], ...
+        Gives all the possible outcomes attributions.
 
         :return: A list of lists of attributions.
+
+        Example:
+        >>> ms = MeasurementScenarioImplementations.CHSH()
+        >>> ms.outcomes_global
+        [0,0,0,0], [0,0,0,1], [0,0,1,0], [0,0,1,1], [0,1,0,0], ...
         """
         return list(itertools.product(self.O, repeat=len(self.X)))
 
@@ -92,7 +97,6 @@ class MeasurementScenario:
         Accessor for the incidence matrix.
 
         :return: the incidence matrix
-        :rtype: np.ndarray
         """
         if self._incidence_matrix is not None:
             return self._incidence_matrix
@@ -139,6 +143,8 @@ class MeasurementScenario:
         :return: the incidence matrix
         :rtype: np.ndarray
         """
+        warnings.warn("It is an experimental method, not documented and tested yet.", UserWarning)
+
         if self._incidence_matrix_constrained is not None:
             return self._incidence_matrix_constrained
 
@@ -173,6 +179,8 @@ class MeasurementScenario:
 
     @property
     def incidence_matrix_signalling(self) -> ndarray:
+        warnings.warn("It is an experimental method, not documented and tested yet.", UserWarning)
+
         if self._incidence_matrix_signalling is not None:
             return self._incidence_matrix_signalling
 
@@ -190,9 +198,10 @@ class MeasurementScenario:
     @property
     def all_outcomes(self) -> List[Tuple[int]]:
         """
-        Give all the outcomes of the full measurement scenario.
+        Give all the outcomes of the contexts of the measurement scenario. WARNING: This assumes that all the contexts
+        have same length.
 
-        :return: A list of all the outcomes.
+        :return: A list of all the outcomes for a given context.
 
         :example:
         >>> ms = MeasurementScenarioImplementations.CHSH()
@@ -202,6 +211,12 @@ class MeasurementScenario:
         return self._all_outcomes
 
     def generate_deterministic(self, positions: Iterable[int]) -> ndarray:
+        """
+        Generates a deterministic empirical model from the given positions.
+
+        :param positions: List of ints to indicate the positions of the "1" in each context.
+        :return: A numpy array representing the deterministic empirical model.
+        """
         empirical_vector = np.zeros((len(self.M), len(self.all_outcomes)))
         for i, pos in enumerate(positions):
             empirical_vector[i, pos] = 1
