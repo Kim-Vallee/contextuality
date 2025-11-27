@@ -1,7 +1,8 @@
 # Contextuality package
 
 [![Software License][ico-license]](LICENSE)
-![Version][ico-version]
+![Version](https://img.shields.io/pypi/v/contextuality?color=brightgreen)
+![Tests](https://github.com/Kim-Vallee/contextuality/actions/workflows/test.yml/badge.svg)
 
 This project is a starter project to have many tools to compute various quantities in measurement scenarios as defined
 by [Abramsky and Brandenburger](http://arxiv.org/abs/1401.2561). It can be used in a variety of cases.
@@ -92,8 +93,8 @@ Examples in the form of notebooks can be found in the [notebooks](notebooks) fol
 
 ## Credits
 
-- [Kim Vallée](https://github.com/Kim-Vallee) -- Author and main contributor
-- [Adel Sohbi](https://github.com/adelshb) -- Author
+- [Kim Vallée](https://github.com/Kim-Vallee) — Author and main contributor
+- [Adel Sohbi](https://github.com/adelshb) — Author
 
 ## License
 
