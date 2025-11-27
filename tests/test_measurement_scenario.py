@@ -3,7 +3,7 @@ import itertools
 import pytest
 import sympy
 
-from contextuality import MeasurementScenarioImplementations, MeasurementScenario
+from contextuality import MeasurementScenarioImplementations, MeasurementScenario, EmpiricalModel
 import numpy as np
 
 
@@ -51,61 +51,105 @@ class TestMeasurementScenario:
 
     def test_o(self):
         assert self.MS_KCBS.O == [0, 1]
+        assert self.MS_RANDOM.O == self.O
 
         with pytest.raises(AttributeError):
             self.MS_KCBS.O = [0, ]
 
     def test_outcomes_global(self):
-        chsh_possible_outcomes = [
-            [0, 0, 0, 0],
-            [0, 0, 0, 1],
-            [0, 0, 1, 0],
-            [0, 0, 1, 1],
-            [0, 1, 0, 0],
-            [0, 1, 0, 1],
-            [0, 1, 1, 0],
-            [0, 1, 1, 1],
-            [1, 0, 0, 0],
-            [1, 0, 0, 1],
-            [1, 0, 1, 0],
-            [1, 0, 1, 1],
-            [1, 1, 0, 0],
-            [1, 1, 0, 1],
-            [1, 1, 1, 0],
-            [1, 1, 1, 1],
-        ]
+        chsh_possible_outcomes = (
+            (0, 0, 0, 0),
+            (0, 0, 0, 1),
+            (0, 0, 1, 0),
+            (0, 0, 1, 1),
+            (0, 1, 0, 0),
+            (0, 1, 0, 1),
+            (0, 1, 1, 0),
+            (0, 1, 1, 1),
+            (1, 0, 0, 0),
+            (1, 0, 0, 1),
+            (1, 0, 1, 0),
+            (1, 0, 1, 1),
+            (1, 1, 0, 0),
+            (1, 1, 0, 1),
+            (1, 1, 1, 0),
+            (1, 1, 1, 1),
+        )
 
-        assert (np.array(self.MS_CHSH.outcomes_global) == np.array(chsh_possible_outcomes)).all()
+        chsh_possible_outcomes_arr = np.empty(len(chsh_possible_outcomes), dtype=object)
+        chsh_possible_outcomes_arr[:] = chsh_possible_outcomes
+
+        chsh_possible_outcomes_original = self.MS_CHSH.outcomes_global
+        chsh_possible_outcomes_original_arr = np.empty(len(chsh_possible_outcomes_original), dtype=object)
+        chsh_possible_outcomes_original_arr[:] = chsh_possible_outcomes_original
+
+        assert (np.sort(chsh_possible_outcomes_arr, kind="stable") == np.sort(chsh_possible_outcomes_original_arr,
+                                                                              kind="stable")).all()
+
+        random_scenario_possible_outcomes = list(itertools.product(self.MS_RANDOM.O, repeat=len(self.X)))
+        random_scenario_possible_outcomes_arr = np.empty(len(random_scenario_possible_outcomes), dtype=object)
+        random_scenario_possible_outcomes_arr[:] = random_scenario_possible_outcomes
+
+        random_scenario_possible_outcomes_original_arr = np.empty(len(self.MS_RANDOM.outcomes_global), dtype=object)
+        random_scenario_possible_outcomes_original_arr[:] = self.MS_RANDOM.outcomes_global
+        assert (
+                np.sort(random_scenario_possible_outcomes_arr, kind="stable")
+                == np.sort(random_scenario_possible_outcomes_original_arr, kind="stable")
+        ).all()
 
     def test_incidence_matrix(self):
         chsh_incidence_matrix = [
-         [1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1],
-         [1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1],
-         [1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
-         [0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
-         [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0],
-         [0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1],
-         [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0],
-         [0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0],
-         [0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0],
-         [0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1]]
+            [1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1],
+            [1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1],
+            [1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1],
+            [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0],
+            [0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0],
+            [0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1]]
 
         assert (np.array(self.MS_CHSH.incidence_matrix) == np.array(chsh_incidence_matrix)).all()
 
-    def test_incidence_matrix_constrained(self):
-        assert False
-
-    def test_incidence_matrix_signalling(self):
-        assert False
-
     def test_all_outcomes(self):
-        assert False
+        assert self.MS_CHSH.all_outcomes == [(0, 0), (0, 1), (1, 0), (1, 1)]
+        assert self.MS_KCBS.all_outcomes == [(0, 0), (0, 1), (1, 0), (1, 1)]
+        assert self.MS_SYMBOLIC.all_outcomes == [(0, 0), (0, 1), (1, 0), (1, 1)]
+
+        assert self.MS_RANDOM.all_outcomes == list(itertools.product(self.O, repeat=len(self.MS_RANDOM.M[0])))
 
     def test_generate_deterministic(self):
-        assert False
+        chsh_deterministic_model = self.MS_CHSH.generate_deterministic([0, 0, 1, 2])
+
+        assert (np.array(chsh_deterministic_model) == np.array([1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0])).all()
+
+        # For a random measurement scenario
+        rand_assignment = [np.random.randint(0, len(self.M[0])) for _ in range(len(self.MS_RANDOM.M))]
+        random_deterministic_model = self.MS_RANDOM.generate_deterministic(
+            rand_assignment
+        )
+
+        random_empirical_model_vec = np.zeros((len(self.M), len(self.MS_RANDOM.all_outcomes)))
+        for i, outcome in enumerate(rand_assignment):
+            random_empirical_model_vec[i, outcome] = 1
+
+        assert (np.array(random_deterministic_model) == np.array(random_empirical_model_vec.flatten())).all()
+
+    def test_eq(self):
+        ms1 = MeasurementScenarioImplementations.CHSH()
+        ms2 = self.MS_CHSH
+        ms3 = MeasurementScenarioImplementations.KCBS()
+        ms4 = self.MS_KCBS
+
+        assert ms1 == ms2
+        assert ms3 == ms4
+
+        assert ms1 != ms3
+        assert ms2 != ms4
