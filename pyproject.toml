@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "contextuality"
-version = "2.0.1"
+version = "2.0.2"
 description = "Contextuality is a package that allows to compute various contextuality related quantities and formalize scenarios in quantum theory."
 authors = [
     "Kim Vallée <kim.vallee@protonmail.com>",
@@ -10,6 +10,11 @@ license = "CC BY-NC 4.0"
 readme = "README.md"
 keywords = ["python", "contextual-fraction", "contextuality"]
 packages = [{ include = "contextuality", from = "src" }]
+
+[tool.poetry.urls]
+repository = "https://github.com/Kim-Vallee/contextuality"
+documentation = "https://contextuality.readthedocs.io/"
+issues = "https://github.com/Kim-Vallee/contextuality/issues"
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.14"
