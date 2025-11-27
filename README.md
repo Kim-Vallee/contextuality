@@ -9,16 +9,40 @@ by [Abramsky and Brandenburger](http://arxiv.org/abs/1401.2561). It can be used 
 
 ## Install
 
-To install the package from pypi you can simply run pip:
+The package is working with pycddlib, thus you need to install cdd. See directly on [their website](https://pycddlib.readthedocs.io/en/stable/quickstart.html#installing-cddlib-and-gmp). For aptitute this amounts to:
+```shell
+$ sudo apt update
+$ sudo apt install libcdd-dev libgmp-dev python3-dev
+```
+
+The package also uses solvers for linear programs. 
+The default is Mosek (see [installation instructions](https://www.mosek.com/downloads/)),
+for which you can have a licence for free if you work in academia [here](https://www.mosek.com/products/academic-licenses/).
+Another option is to go for [HiGHS solver](https://ergo-code.github.io/HiGHS/dev/interfaces/python/), which is free.
+
+The you can either install the package from pypi:
 ```shell
 $ python -m pip install contextuality
 ```
 
-### Developers
-
-If you wish to improve the package you can install from the sources with poetry:
+Or you can install it from source:
 ```shell
+$ git clone https://github.com/Kim-Vallee/contextuality.git
+$ cd contextuality
+$ poetry install
+$ poetry build
+$ python -m pip install dist/contextuality-<version>-py3-none-any.whl
+```
+
+### Contribute
+
+If you wish to improve the package you can install from the sources with poetry and make pull requests:
+```shell
+$ git clone https://github.com/Kim-Vallee/contextuality.git
+$ cd contextuality
 $ poetry install --with dev
+$ pip install -e . # or for poetry:
+$ poetry add --editable .
 ```
 
 ## Documentation
