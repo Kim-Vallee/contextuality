@@ -1,14 +1,14 @@
-import random
-from typing import Dict
+import itertools
+from typing import Dict, Any, List
 
+import cvxpy as cp
+import numpy as np
 import pytest
 from numpy.typing import NDArray
+from qutip import ket2dm, identity, basis
 
 from contextuality import MeasurementScenarioImplementations, MeasurementScenario
 from contextuality.empirical_model import EmpiricalModel
-import numpy as np
-
-from qutip import ket2dm, identity, basis
 
 # For Pycharm autocomplete to work
 ms_chsh: MeasurementScenario
@@ -29,6 +29,81 @@ em_kcbs_rand: EmpiricalModel
 em_kcbs_invalid: EmpiricalModel
 
 SOLVER = "highs"
+
+
+def compatibility_of_marginals_constraints(em: EmpiricalModel, EM_vector: cp.Variable) -> List:
+    O, M = em.measurement_scenario.O, em.measurement_scenario.M
+    outcomes = list(itertools.product(O, repeat=len(M[0])))
+    nb_outcomes = len(outcomes)
+    constraints = []
+    for i, ctx1 in enumerate(M):
+        for j, ctx2 in enumerate(M):
+            if ctx1 == ctx2:
+                continue
+            # Also counting same elements, useless
+            intersection = np.intersect1d(ctx1, ctx2, return_indices=False)
+            if intersection.size > 0:
+                # Note the intersection value (is it A0, A1 ...)
+                intersection_value = int(intersection[0])
+
+                # Find the position in the context (if we are looking for A1 in A0A1 and in A1A2 then i_ctx1 = 1 and
+                # j_ctx2 = 0)
+                i_ctx1 = ctx1.index(intersection_value)
+                j_ctx2 = ctx2.index(intersection_value)
+
+                # Note the position of the values to sum
+                ctx_1_indices: List[List[int]] = [[] for _ in range(len(O))]
+                ctx_2_indices: List[List[int]] = [[] for _ in range(len(O))]
+                for k, outcome in enumerate(outcomes):
+                    ctx_1_indices[outcome[i_ctx1]].append(k)
+                    ctx_2_indices[outcome[j_ctx2]].append(k)
+
+                # Finally get the context and add the constraint
+                h_NS_ctx1 = EM_vector[i * nb_outcomes: (i + 1) * nb_outcomes]
+                h_NS_ctx2 = EM_vector[j * nb_outcomes: (j + 1) * nb_outcomes]
+
+                for ind1, ind2 in zip(ctx_1_indices, ctx_2_indices):
+                    m_ctx1 = cp.Constant(0)
+                    m_ctx2 = cp.Constant(0)
+                    for ind11, ind21 in zip(ind1, ind2):
+                        m_ctx1 += h_NS_ctx1[ind11]
+                        m_ctx2 += h_NS_ctx2[ind21]
+
+                    constraints += [m_ctx1 == m_ctx2]
+    return constraints
+
+
+def compute_sf_legacy(em: EmpiricalModel, solver: str = "MOSEK", verbose: bool = False) -> Dict[str, Any]:
+    MS = em.measurement_scenario
+    ve = em.vector
+
+    O, M = MS.O, MS.M
+
+    outcomes = list(itertools.product(O, repeat=len(M[0])))
+    nb_outcomes = len(outcomes)
+    nb_entries = ve.size
+
+    h_NS = cp.Variable(nb_entries)
+
+    constraints = [h_NS >= cp.Constant(0)]
+
+    constraints += [ve >= h_NS]
+
+    z = cp.Variable(1, nonneg=True)
+
+    # Forces the normalization with respect to lambda
+    for i in range(0, nb_entries, nb_outcomes):
+        constraints += [cp.sum(h_NS[i: i + nb_outcomes]) == z]
+
+    constraints += compatibility_of_marginals_constraints(em, h_NS)
+
+    prob = cp.Problem(cp.Maximize(z), constraints)
+    prob.solve(solver=solver, verbose=verbose)
+
+    NSF = z.value[0]
+    SF = 1 - NSF
+
+    return {"SF": SF, "NSF": NSF, "h_NS": EmpiricalModel(MS, h_NS.value)}
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -285,13 +360,23 @@ def test_compute_sf():
 
     # SF should be convex
     l = np.random.rand()
-    em_chsh_convex = (1-l) * em_chsh_pr + l * em_chsh_rand
+    em_chsh_convex = (1 - l) * em_chsh_pr + l * em_chsh_rand
     sf_chsh_convex = em_chsh_convex.compute_sf(solver=SOLVER)["SF"]
-    assert sf_chsh_convex <= (1-l) * sf_chsh_pr + l * sf_chsh_rand + tol
+    assert sf_chsh_convex <= (1 - l) * sf_chsh_pr + l * sf_chsh_rand + tol
 
-    em_kcbs_convex = (1-l) * em_kcbs_pr + l * em_kcbs_rand
+    em_kcbs_convex = (1 - l) * em_kcbs_pr + l * em_kcbs_rand
     sf_kcbs_convex = em_kcbs_convex.compute_sf(solver=SOLVER)["SF"]
-    assert sf_kcbs_convex <= (1-l) * sf_chsh_pr + l * sf_kcbs_rand + tol
+    assert sf_kcbs_convex <= (1 - l) * sf_chsh_pr + l * sf_kcbs_rand + tol
+
+
+def test_compute_sf_legacy():
+    sf_chsh_rand = em_chsh_rand.compute_sf(solver=SOLVER)["SF"]
+    sf_kcbs_rand = em_kcbs_rand.compute_sf(solver=SOLVER)["SF"]
+    sf_chsh_rand_legacy = compute_sf_legacy(em_chsh_rand, solver=SOLVER)["SF"]
+    sf_kcbs_rand_legacy = compute_sf_legacy(em_kcbs_rand, solver=SOLVER)["SF"]
+
+    assert np.isclose(sf_chsh_rand, sf_chsh_rand_legacy)
+    assert np.isclose(sf_kcbs_rand, sf_kcbs_rand_legacy)
 
 
 def test_compute_cf():
@@ -361,9 +446,6 @@ def test_mul_div_add():
 
     # Convex mixture
     l = np.random.rand()
-    em_chsh_sum = (1-l) * em_chsh_rand_1 + l * em_chsh_rand_2
-    expected_mvector = (1-l) * rand_vect_chsh_1 + l * rand_vect_chsh_2
+    em_chsh_sum = (1 - l) * em_chsh_rand_1 + l * em_chsh_rand_2
+    expected_mvector = (1 - l) * rand_vect_chsh_1 + l * rand_vect_chsh_2
     assert (em_chsh_sum.mvector == expected_mvector).all()
-
-
-
