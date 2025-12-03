@@ -221,11 +221,11 @@ class EmpiricalModel:
 
     def compute_sf(self, solver: str = "MOSEK", verbose: bool = False) -> Dict[str, Any]:
         """
-        Computes the signaling fraction from an empirical model and a MeasurementScenario.
+        Computes the signaling fraction of this empirical model.
 
         :param solver: Solver for cvxpy. Defaults to "MOSEK".
         :param verbose: Whether the solver should verbose. Defaults to False.
-        :return: Signalling and non-signalling fractions
+        :return: Signalling and non-signalling fractions.
         """
 
         ms = self.measurement_scenario
@@ -255,7 +255,7 @@ class EmpiricalModel:
 
     def compute_cf(self, eta: float = 0, solver: str = "MOSEK", verbose: bool = False) -> Dict[str, float]:
         """
-        Compute the Non-Contextual Fraction (NCF) of an empirical model.
+        Compute the Non-Contextual Fraction (NCF) of this empirical model.
 
         :param eta: Value of the non-determinism allowed.
         :param solver: The solver used for cvxpy. Defaults to "MOSEK".
