@@ -10,7 +10,7 @@ from qutip import ket2dm, identity, basis
 
 
 def test_empirical_model_instances():
-    chsh = MeasurementScenarioImplementations.CHSH()
+    chsh = MeasurementScenarioImplementations.chsh()
 
     # Without value for the em
     em1 = EmpiricalModel(chsh)
@@ -21,7 +21,7 @@ def test_empirical_model_instances():
 
 
 def test_empirical_model_magic_properties():
-    chsh = MeasurementScenarioImplementations.CHSH()
+    chsh = MeasurementScenarioImplementations.chsh()
 
     em_det = EmpiricalModel(chsh, EMPIRICAL_MODELS['FD'])
     em_nondet = EmpiricalModel(chsh, EMPIRICAL_MODELS['PRBOX'])
@@ -40,7 +40,7 @@ def test_empirical_model_magic_properties():
 
 def test_quantum_realization_and_cf():
     # In Simple Hardy-Like Proof... By Cabello
-    KCBS = MeasurementScenarioImplementations.KCBS()
+    KCBS = MeasurementScenarioImplementations.kcbs()
 
     angle = np.pi / 5
     Z_angle = np.sqrt(np.cos(angle))
@@ -76,7 +76,7 @@ def test_quantum_realization_and_cf():
 
     assert em.compute_cf(solver="highs")["CF"] > 0
 
-    chsh = MeasurementScenarioImplementations.CHSH()
+    chsh = MeasurementScenarioImplementations.chsh()
 
     em_det = EmpiricalModel(chsh, EMPIRICAL_MODELS['FD'])
 
@@ -84,7 +84,7 @@ def test_quantum_realization_and_cf():
 
 
 def test_other_methods():
-    chsh = MeasurementScenarioImplementations.CHSH()
+    chsh = MeasurementScenarioImplementations.chsh()
 
     em_det = EmpiricalModel(chsh, EMPIRICAL_MODELS['FD'])
     em_pr = EmpiricalModel(chsh, EMPIRICAL_MODELS['PRBOX'])

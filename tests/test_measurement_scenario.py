@@ -8,8 +8,8 @@ import numpy as np
 
 
 class TestMeasurementScenario:
-    MS_KCBS = MeasurementScenarioImplementations.KCBS()
-    MS_CHSH = MeasurementScenarioImplementations.CHSH()
+    MS_KCBS = MeasurementScenarioImplementations.kcbs()
+    MS_CHSH = MeasurementScenarioImplementations.chsh()
 
     # Create a random ms
     nb_obs = np.random.randint(4, 10)
@@ -143,9 +143,9 @@ class TestMeasurementScenario:
         assert (np.array(random_deterministic_model) == np.array(random_empirical_model_vec.flatten())).all()
 
     def test_eq(self):
-        ms1 = MeasurementScenarioImplementations.CHSH()
+        ms1 = MeasurementScenarioImplementations.chsh()
         ms2 = self.MS_CHSH
-        ms3 = MeasurementScenarioImplementations.KCBS()
+        ms3 = MeasurementScenarioImplementations.kcbs()
         ms4 = self.MS_KCBS
 
         assert ms1 == ms2

@@ -250,7 +250,7 @@ class MeasurementScenarioImplementations(abc.ABC):
     """
 
     @staticmethod
-    def CHSH() -> MeasurementScenario:
+    def chsh() -> MeasurementScenario:
         """ Generates the CHSH MeasurementScenario class. """
         O = [0, 1]
         X = list(range(4))
@@ -258,7 +258,12 @@ class MeasurementScenarioImplementations(abc.ABC):
         return MeasurementScenario(X, M, O)
 
     @staticmethod
-    def KCBS() -> MeasurementScenario:
+    def CHSH() -> MeasurementScenario:
+        warnings.warn("This method is deprecated. Please use MeasurementScenarioImplementations.chsh() instead.", DeprecationWarning)
+        return MeasurementScenarioImplementations.chsh()
+
+    @staticmethod
+    def kcbs() -> MeasurementScenario:
         """ Generates the KCBS MeasurementScenario class. """
         X = [i for i in range(5)]
         M = [[i, i + 1] for i in range(4)] + [[4, 0]]
@@ -266,12 +271,22 @@ class MeasurementScenarioImplementations(abc.ABC):
         return MeasurementScenario(X, M, O)
 
     @staticmethod
-    def PeresMermin() -> MeasurementScenario:
+    def KCBS() -> MeasurementScenario:
+        warnings.warn("This method is deprecated. Please use MeasurementScenarioImplementations.kcbs() instead.", DeprecationWarning)
+        return MeasurementScenarioImplementations.kcbs()
+
+    @staticmethod
+    def peres_mermin() -> MeasurementScenario:
         """ Generates the Peres Mermin MeasurementScenario class. """
         X = list(range(9))
         M = [X[i:i + 3] for i in range(0, 9, 3)] + [[X[i]] + [X[i + 3]] + [X[i + 6]] for i in range(3)]
         O = [0, 1]
         return MeasurementScenario(X, M, O)
+
+    @staticmethod
+    def PeresMermin() -> MeasurementScenario:
+        warnings.warn("This method is deprecated. Please use MeasurementScenarioImplementations.peres_mermin() instead.", DeprecationWarning)
+        return MeasurementScenarioImplementations.peres_mermin()
 
 
 class GeneralizedMeasurementScenario(MeasurementScenario):

@@ -109,9 +109,9 @@ def compute_sf_legacy(em: EmpiricalModel, solver: str = "MOSEK", verbose: bool =
 @pytest.fixture(scope="module", autouse=True)
 def setup_globals():
     global ms_chsh, ms_kcbs, ms_pm, EMPIRICAL_MODELS
-    ms_chsh = MeasurementScenarioImplementations.CHSH()
-    ms_kcbs = MeasurementScenarioImplementations.KCBS()
-    ms_pm = MeasurementScenarioImplementations.PeresMermin()
+    ms_chsh = MeasurementScenarioImplementations.chsh()
+    ms_kcbs = MeasurementScenarioImplementations.kcbs()
+    ms_pm = MeasurementScenarioImplementations.peres_mermin()
 
     EMPIRICAL_MODELS = {
         "CHSH": np.array([
@@ -269,7 +269,7 @@ def test_quantum_realisation():
         [ket2dm(a.eigenstates()[1][0]).full(), (ket2dm(a.eigenstates()[1][1]) + ket2dm(a.eigenstates()[1][2])).full()]
         for a in obs]
 
-    em = EmpiricalModel(MeasurementScenarioImplementations.KCBS())
+    em = EmpiricalModel(MeasurementScenarioImplementations.kcbs())
     rho = ket2dm(two).unit().full()
     em.quantum_realisation(rho, pvms)
 
