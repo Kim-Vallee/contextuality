@@ -12,6 +12,7 @@
 
 """ Set of utilitary functions and constants used across the project """
 import itertools
+import warnings
 from typing import List, Optional, Dict, Any, Tuple, Union, Literal
 
 import cdd
@@ -20,6 +21,8 @@ import numpy as np
 
 from contextuality.empirical_model import EmpiricalModel
 from contextuality.measurement_scenario import MeasurementScenario
+
+ReprType = Literal["V", "H", "BOTH"]
 
 __cache_NC_polytope_H = {}
 
@@ -30,7 +33,6 @@ def polytope_to_h(D: np.ndarray) -> np.array:
 
     :param D: The polytope in V representation.
     :return: The polytope in H representation.
-    :rtype: np.ndarray
     """
     mat = cdd.matrix_from_array(D, rep_type=cdd.RepType.GENERATOR)
     poly = cdd.polyhedron_from_matrix(mat)
@@ -39,17 +41,14 @@ def polytope_to_h(D: np.ndarray) -> np.array:
     return H
 
 
-def nc_polytope(MS: MeasurementScenario, representation: str = "V") \
+def nc_polytope(MS: MeasurementScenario, representation: ReprType = "V") \
         -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """
     Polytope for the Non-Contextual set.
 
     :param MS: Measurement Scenario that is associated to that polytope.
-    :type MS: MeasurementScenario
     :param representation: Representation expected as a return.
-    :type representation: "V", "H" or "BOTH"
     :return: The polytope in the form of a matrix representation H or V depending on the parameter representation.
-    :rtype: np.ndarray
     """
     X, M, O = MS.X, MS.M, MS.O
     outcomes_assignements = list(itertools.product([0, 1], repeat=len(X)))
@@ -91,11 +90,8 @@ def signalling_polytope(MS: MeasurementScenario, include_NS_polytope: bool = Tru
     deterministic.
 
     :param MS: The measurement scenario
-    :type MS: MeasurementScenario
     :param include_NS_polytope: Whether to return ONLY the signalling points or all the points.
-    :type include_NS_polytope: bool
     :return: The points of the Signalling polytope as rows
-    :rtype: np.ndarray
     """
     O, X, M = MS.O, MS.X, MS.M
 
@@ -124,16 +120,14 @@ def signalling_polytope(MS: MeasurementScenario, include_NS_polytope: bool = Tru
 
     return D
 
+
 def compatibility_of_marginals_constraints(MS: MeasurementScenario, EM_vector: cp.Variable) -> List:
     """
     Generate compatibility of marginals constraints on an empirical model vector as a Variable of cvxpy.
 
     :param MS: Measurement scenario associated to the empirical model vector.
-    :type MS: MeasurementScenario
     :param EM_vector: Empirical Model vectorial representation.
-    :type EM_vector: cp.Variable
     :return: A list of constraints on EM_vector to respect the compatibility of marginals.
-    :rtype: List
     """
     O, M = MS.O, MS.M
     outcomes = list(itertools.product(O, repeat=len(M[0])))
@@ -184,13 +178,9 @@ def compute_deterministic_fraction(empirical_model: EmpiricalModel,
     The function takes as input an EmpiricalModel object and returns the value of its deterministic fraction.
 
     :param empirical_model: The empirical model that describes the experiment.
-    :type empirical_model: EmpiricalModel
     :param solver: Used to Specify the solver to be used. Defaults to Mosek.
-    :type solver: str
     :param verbose: Used to Display the computation details. Defaults to False.
-    :type verbose: bool
     :return: The value of the deterministic fraction and its opposite
-    :rtype: Dict[str, float]
     """
     ve = empirical_model.vector
     D = nc_polytope(empirical_model.measurement_scenario)
@@ -211,6 +201,15 @@ def compute_deterministic_fraction(empirical_model: EmpiricalModel,
 
 def compute_ncf_winter(empirical_model: EmpiricalModel, solver: str = "MOSEK", verbose: bool = False) \
         -> Dict[str, float]:
+    """
+    Experimental function to compute the NCF as defined in Winter's paper (DOI: 10.1088/1751-8113/47/42/424031).
+
+    :param empirical_model: The empirical model for which we want to compute the NCF.
+    :param solver: The solver used for the LP.
+    :param verbose: Whether the solver should verbose.
+    :return: The CF, NCF and the optimal solution with a dictionary of the form {"opt_sol": ..., "NCF": ..., "CF": ...}
+    """
+    warnings.warn("This function is experimental, and might change in the future.", UserWarning)
     MS = empirical_model.measurement_scenario
     ve = empirical_model.vector
 
@@ -235,18 +234,15 @@ def compute_max_cf(MS: MeasurementScenario, sigma: float, eta: float, big_m: flo
     LP to find the maximum distance between two empirical models.
 
     :param MS: The measurement scenario in which we try to find the maximum CF.
-    :type MS: MeasurementScenario
     :param sigma: Parameter dependence fraction.
-    :type sigma: float
     :param eta: Outcome nondeterminism fraction.
     :param big_m: Parameter for the big M method in LP.
     :param solver: The solver used for the LP. Defaults to 'MOSEK'.
-    :type solver: str
     :param verbose: Whether the solver should verbose. Defaults to False.
-    :type verbose: bool
     :return: The empirical model that violates at most the inequality and the violation.
-    :rtype: Dict[str, Any]
     """
+    warnings.warn("This function is experimental, and might change in the future.", UserWarning)
+
     # Non-signalling case
     O, X, M = MS.O, MS.X, MS.M
     outcomes = list(itertools.product(O, repeat=len(MS.M[0])))
@@ -362,6 +358,8 @@ def get_bound_winter(MS: MeasurementScenario, lambdas: Optional[np.ndarray] = No
     :param verbose: Whether to verbose the outputs.
     :return: The classical bound.
     """
+    warnings.warn("This function will be removed in the future.", DeprecationWarning)
+
     assert bound_type in ["classical", "global"], \
         "Type of bound not recognized. Allowed values are classical and global."
 
@@ -411,6 +409,7 @@ def get_bound_winter(MS: MeasurementScenario, lambdas: Optional[np.ndarray] = No
 
 
 def get_bound_winter_epsilon(MS: MeasurementScenario, epsilon: float = 0):
+    warnings.warn("This function will be removed in the future.", DeprecationWarning)
     # Very slow, since it makes all the possible assignments.
     O, X, M = MS.O, MS.X, MS.M
     nb_projectors = len(X)
