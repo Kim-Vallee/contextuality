@@ -232,9 +232,16 @@ class MeasurementScenario:
         if not isinstance(other, MeasurementScenario):
             raise ValueError(f"The operand is not of the right type : {type(other)}")
 
-        return sorted(self.X) == sorted(other.X) and \
+        # Handles the case where symbols are used. Does not affect integers sorting.
+        this_X_str = [str(x) for x in self.X]
+        other_X_str = [str(x) for x in other.X]
+
+        this_M_str = [[str(x) for x in m] for m in self.M]
+        other_M_str = [[str(x) for x in m] for m in other.M]
+
+        return sorted(this_X_str) == sorted(other_X_str) and \
             sorted(self.O) == sorted(other.O) and \
-            sorted(self.M) == sorted(other.M)
+            sorted(this_M_str) == sorted(other_M_str)
 
     def __ne__(self, other):
         return not self.__eq__(other)

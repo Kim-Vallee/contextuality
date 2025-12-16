@@ -147,9 +147,21 @@ class TestMeasurementScenario:
         ms2 = self.MS_CHSH
         ms3 = MeasurementScenarioImplementations.kcbs()
         ms4 = self.MS_KCBS
+        # Testing symbolics
+        ms5 = MeasurementScenario(X=["A", "B", "C", "D"], M=[["A", "C"], ["A", "D"], ["B", "C"], ["B", "D"]], O=[0, 1])
+        ms6 = MeasurementScenario(X=["A", "B", "C", "D"], M=[["B", "C"], ["B", "D"], ["A", "C"], ["A", "D"]], O=[0, 1])
 
         assert ms1 == ms2
         assert ms3 == ms4
 
         assert ms1 != ms3
         assert ms2 != ms4
+
+        assert ms5 == ms6
+
+        # Expected for the same scenario with different labels to be deemed different
+        assert ms5 != ms1
+        assert ms6 != ms2
+
+        assert ms4 != ms5
+        assert ms4 != ms6
