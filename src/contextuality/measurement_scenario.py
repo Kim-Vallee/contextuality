@@ -16,13 +16,12 @@ import abc
 import itertools
 import warnings
 from typing import List, Tuple, Iterable, Union, Dict
-from sympy import Symbol, Expr, sympify, Basic
-from sympy.parsing.sympy_parser import parse_expr
-import warnings
 
 import numpy as np
-from numpy import ndarray
 from matplotlib import pyplot as plt
+from numpy import ndarray
+from sympy import Symbol, Expr, sympify, Basic
+from sympy.parsing.sympy_parser import parse_expr
 
 int_or_symbol = Union[int, Symbol, str]
 
