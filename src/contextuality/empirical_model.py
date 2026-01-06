@@ -103,19 +103,19 @@ class EmpiricalModel:
         """
         return self.vector.reshape(len(self.measurement_scenario.M), len(self.measurement_scenario.all_outcomes))
 
-    def quantum_realisation(self, rho: ArrayLike, meas: ArrayLike) -> None:
+    def quantum_realisation(self, rho: ArrayLike, pvms: ArrayLike) -> None:
         r"""
         Compute an empirical model/behavior from a provided quantum realization.
 
         :param rho:     The quantum state density matrix.
-        :param meas:    The measurements in an array. The indices are "measurement label", "outcome" to access
+        :param pvms:    The measurements in an array. The indices are "measurement label", "outcome" to access
                         a specific measurement PVM. For instance, meas[0,0] accesses the PVM for measurement
                         with label X[0] and outcome O[0] respectively.
         """
 
         # Get parameters
         self._rho = np.array(rho)
-        self._meas = np.array(meas)
+        self._meas = np.array(pvms)
         O, M = self.measurement_scenario.O, self.measurement_scenario.M
 
         # Compute the empiral model/behavior from quantum realization.
