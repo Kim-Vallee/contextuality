@@ -347,13 +347,16 @@ class EmpiricalModel:
 
     def __str__(self):
         vector_print = ""
-        for row in self.mvector:
-            vector_print += "\t"
-            for v in row:
-                vector_print += f"{v:.2f} "
-            vector_print += "\n"
+        try:
+            for row in self.mvector:
+                vector_print += "\t"
+                for v in row:
+                    vector_print += f"{v:.2f} "
+                vector_print += "\n"
 
-        return f"EmpiricalModel({self.measurement_scenario}\n{vector_print})"
+            return f"EmpiricalModel({self.measurement_scenario}\n{vector_print})"
+        except AttributeError:
+            return f"EmpiricalModel({self.measurement_scenario})"
 
     def __repr__(self):
         return self.__str__()

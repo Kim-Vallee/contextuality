@@ -4,6 +4,7 @@ from typing import Dict, Any, List
 import cvxpy as cp
 import numpy as np
 import pytest
+import re
 from numpy.typing import NDArray
 from qutip import ket2dm, identity, basis
 
@@ -449,3 +450,20 @@ def test_mul_div_add():
     em_chsh_sum = (1 - l) * em_chsh_rand_1 + l * em_chsh_rand_2
     expected_mvector = (1 - l) * rand_vect_chsh_1 + l * rand_vect_chsh_2
     assert (em_chsh_sum.mvector == expected_mvector).all()
+
+
+def test_str_representation():
+    # Test the string representation of empirical models
+    string_repr_chsh = str(em_chsh_pr)
+    assert string_repr_chsh.split('\n')[0] == f"EmpiricalModel({ms_chsh}"
+    assert string_repr_chsh.split('\n')[-1] == ")"
+
+    string_repr_kcbs = str(em_kcbs_det)
+    assert string_repr_kcbs.split('\n')[0] == f"EmpiricalModel({ms_kcbs}"
+    assert string_repr_kcbs.split('\n')[-1] == ")"
+
+    # Test empty empirical model
+    em_empty = EmpiricalModel(ms_pm)
+    string_repr_empty = str(em_empty)
+    assert string_repr_empty == f"EmpiricalModel({ms_pm})"
+
