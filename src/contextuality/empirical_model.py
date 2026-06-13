@@ -282,6 +282,15 @@ class EmpiricalModel:
 
         return {"opt_sol_nc": b_nc.value, "opt_sol_s": b.value, "NCF": prob.value, "CF": 1 - prob.value,
                 "behaviour": incidence_matrix_signalling @ b.value + incidence_matrix @ b_nc.value}
+        
+    def compute_dual_cf(self, solver: str = "MOSEK", verbose: bool = False) -> Dict[str, float]:
+        """Compute the dual program of the contextual fraction
+
+        :param solver: The solver used for cvxpy. Defaults to "MOSEK".
+        :param verbose: Whether the solver should verbose. Defaults to False.
+        :return: TODO: what does it return ?
+        """
+        pass # TODO: Finish this function
 
     def _compute_cf_deterministic(self, solver: Union[str, None] = "MOSEK", verbose: bool = False):
         ms = self.measurement_scenario
