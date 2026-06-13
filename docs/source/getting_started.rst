@@ -130,4 +130,4 @@ Credits
 License
 -------
 
-The CC BY-NC 4.0. Please see `License File <LICENSE>`_ for more information.
+This work is licensed under GNU GPLv3. Please see the `License File <LICENSE>`_ for more information.

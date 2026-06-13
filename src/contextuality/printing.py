@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+#
+# Written by Kim Vallée, https://github.com/Kim-Vallee.
+#
+# Created at 09/02/2023
+#
+# This code is licensed under the GNU GPLv3 license. You may
+# obtain a copy of this license in the LICENSE file in the root directory
+# of this source tree or at https://www.gnu.org/licenses/gpl-3.0.fr.html#license-text.
+
 import itertools
 
 import numpy as np
