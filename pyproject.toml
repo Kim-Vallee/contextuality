@@ -7,7 +7,6 @@ authors = [
     "Adel Sohbi"
 ]
 license = "GPL-3.0-or-later"
-license-files = ["LICENSE"]
 readme = "README.md"
 keywords = ["python", "contextual-fraction", "contextuality"]
 packages = [{ include = "contextuality", from = "src" }]
