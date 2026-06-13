@@ -6,7 +6,8 @@ authors = [
     "Kim Vallée <kim.vallee@protonmail.com>",
     "Adel Sohbi"
 ]
-license = "CC BY-NC 4.0"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
 readme = "README.md"
 keywords = ["python", "contextual-fraction", "contextuality"]
 packages = [{ include = "contextuality", from = "src" }]

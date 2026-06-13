@@ -122,8 +122,6 @@ Examples in the form of notebooks can be found in the [notebooks](notebooks) fol
 
 ## License
 
-The CC BY-NC 4.0. Please see [License File](LICENSE) for more information.
+This piece of code is licensed under GNU General Public License v3.0. Please see [License File](LICENSE) for more information.
 
-[ico-version]: https://img.shields.io/badge/Version-2.0.1-brightgreen.svg?style=flat-square
-
-[ico-license]: https://img.shields.io/badge/License-CC_BYNC_4.0-brightgreen.svg?style=flat-square
+[ico-license]: https://img.shields.io/badge/License-GPLv3-blue.svg
