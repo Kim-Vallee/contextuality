@@ -307,7 +307,7 @@ class EmpiricalModel:
 
         :param solver: The solver used for cvxpy. Defaults to "MOSEK".
         :param verbose: Whether the solver should verbose. Defaults to False.
-        :return: TODO: what does it return ?
+        :return: A dictionary with the optimal solution and 'a', the coefficients of the closest inequality
         """
         ms = self.measurement_scenario
         ve = self.vector
