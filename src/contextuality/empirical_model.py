@@ -139,7 +139,7 @@ class EmpiricalModel:
         Example:
 
         >>> from contextuality import MeasurementScenarioImplementations, EmpiricalModel
-        >>> ms = MeasurementScenarioImplementations.KCBS()
+        >>> ms = MeasurementScenarioImplementations.kcbs()
         >>> em = EmpiricalModel(ms, [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0])
         >>> signalling_vars, values_per_context = em.get_signalling_variables()
         >>> print(signalling_vars)
@@ -308,6 +308,21 @@ class EmpiricalModel:
         :param solver: The solver used for cvxpy. Defaults to "MOSEK".
         :param verbose: Whether the solver should verbose. Defaults to False.
         :return: A dictionary with the optimal solution and 'a', the coefficients of the closest inequality
+        
+        Example:
+        
+        >>> from contextuality import MeasurementScenarioImplementations, EmpiricalModel
+        >>> ms = MeasurementScenarioImplementations.chsh()
+        >>> quantum_em = EmpiricalModel(
+                ms_chsh,
+                [
+                    [0.4267767, 0.0732233, 0.0732233, 0.4267767],
+                    [0.4267767, 0.0732233, 0.0732233, 0.4267767],
+                    [0.4267767, 0.0732233, 0.0732233, 0.4267767],
+                    [0.0732233, 0.4267767, 0.4267767, 0.0732233],
+                ],
+            )
+        >>> coefficients = quantum_em.compute_dual_cf()["a"] 
         """
         ms = self.measurement_scenario
         ve = self.vector

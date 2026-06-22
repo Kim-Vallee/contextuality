@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import re
 from numpy.typing import NDArray
-from qutip import ket2dm, identity, basis
+from qutip import ket2dm, identity, basis, tensor, sigmaz, sigmax
 
 from contextuality import MeasurementScenarioImplementations, MeasurementScenario
 from contextuality.empirical_model import EmpiricalModel
@@ -31,81 +31,133 @@ em_kcbs_invalid: EmpiricalModel
 
 SOLVER = "highs"
 
+
 class TestEmpiricalModel:
     ms_chsh = MeasurementScenarioImplementations.chsh()
     ms_kcbs = MeasurementScenarioImplementations.kcbs()
     ms_pm = MeasurementScenarioImplementations.peres_mermin()
 
     EMPIRICAL_MODELS = {
-        "CHSH": np.array([
-            1 / 2, 0, 0, 1 / 2,
-            3 / 8, 1 / 8, 1 / 8, 3 / 8,
-            3 / 8, 1 / 8, 1 / 8, 3 / 8,
-            1 / 8, 3 / 8, 3 / 8, 1 / 8
-        ]),
-        "PRBOX": np.array([
-            0.5, 0., 0., 0.5,
-            0.5, 0., 0., 0.5,
-            0.5, 0., 0., 0.5,
-            0., 0.5, 0.5, 0.
-        ]),
-        "MS": np.array([
-            1., 0., 0., 0.,
-            1., 0., 0., 0.,
-            1., 0., 0., 0.,
-            0., 1., 0., 0.
-        ]),
-        "FD": np.array([
-            1., 0., 0., 0.,
-            1., 0., 0., 0.,
-            1., 0., 0., 0.,
-            1., 0., 0., 0.
-        ]),
+        "CHSH": np.array(
+            [
+                [1 / 2, 0, 0, 1 / 2],
+                [3 / 8, 1 / 8, 1 / 8, 3 / 8],
+                [3 / 8, 1 / 8, 1 / 8, 3 / 8],
+                [1 / 8, 3 / 8, 3 / 8, 1 / 8],
+            ]
+        ).flatten(),
+        "PRBOX": np.array(
+            [
+                [0.5, 0.0, 0.0, 0.5],
+                [0.5, 0.0, 0.0, 0.5],
+                [0.5, 0.0, 0.0, 0.5],
+                [0.0, 0.5, 0.5, 0.0],
+            ]
+        ).flatten(),
+        "MS": np.array(
+            [
+                [1.0, 0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0, 0.0],
+            ]
+        ).flatten(),
+        "FD": np.array(
+            [
+                [1.0, 0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0, 0.0],
+            ]
+        ).flatten(),
     }
 
-    em_chsh_pr = EmpiricalModel(ms_chsh, EMPIRICAL_MODELS['PRBOX'])
-    em_chsh_det = EmpiricalModel(ms_chsh, EMPIRICAL_MODELS['FD'])
+    em_chsh_pr = EmpiricalModel(ms_chsh, EMPIRICAL_MODELS["PRBOX"])
+    em_chsh_det = EmpiricalModel(ms_chsh, EMPIRICAL_MODELS["FD"])
     em_chsh_invalid = EmpiricalModel(ms_chsh, np.zeros(16))
-    em_chsh_sign = EmpiricalModel(ms_chsh, EMPIRICAL_MODELS['MS'])
+    em_chsh_sign = EmpiricalModel(ms_chsh, EMPIRICAL_MODELS["MS"])
     rand_vect_chsh = np.random.rand(16).reshape(4, 4)
     rand_vect_chsh /= rand_vect_chsh.sum(axis=1, keepdims=True)
     em_chsh_rand = EmpiricalModel(ms_chsh, rand_vect_chsh)
 
-    em_kcbs_pr = EmpiricalModel(ms_kcbs, np.array([
-        0.5, 0., 0., 0.5,
-        0.5, 0., 0., 0.5,
-        0.5, 0., 0., 0.5,
-        0.5, 0., 0., 0.5,
-        0., 0.5, 0.5, 0.
-    ]))
-    em_kcbs_det = EmpiricalModel(ms_kcbs, np.array([
-        1., 0., 0., 0.,
-        1., 0., 0., 0.,
-        1., 0., 0., 0.,
-        1., 0., 0., 0.,
-        1., 0., 0., 0.
-    ]))
-    em_kcbs_sign = EmpiricalModel(ms_kcbs, np.array([
-        1., 0., 0., 0.,
-        1., 0., 0., 0.,
-        1., 0., 0., 0.,
-        1., 0., 0., 0.,
-        0., 1., 0., 0.
-    ]))
-    em_kcbs_invalid = EmpiricalModel(ms_kcbs, np.array([
-        1., 0., 0., 0.,
-        1., 0., 0., 0.,
-        1., 0., 0., 0.,
-        1., 0., 0., 0.,
-        0., 0., 0., 0.
-    ]))
+    # Quantum chsh version
+    quantum_em = EmpiricalModel(
+        ms_chsh,
+        [
+            [0.4267767, 0.0732233, 0.0732233, 0.4267767],
+            [0.4267767, 0.0732233, 0.0732233, 0.4267767],
+            [0.4267767, 0.0732233, 0.0732233, 0.4267767],
+            [0.0732233, 0.4267767, 0.4267767, 0.0732233],
+        ],
+    )
+
+    em_kcbs_pr = EmpiricalModel(
+        ms_kcbs,
+        np.array(
+            [
+                [0.5, 0.0, 0.0, 0.5],
+                [0.5, 0.0, 0.0, 0.5],
+                [0.5, 0.0, 0.0, 0.5],
+                [0.5, 0.0, 0.0, 0.5],
+                [0.0, 0.5, 0.5, 0.0],
+            ]
+        ).flatten(),
+    )
+    em_kcbs_det = EmpiricalModel(
+        ms_kcbs,
+        np.array(
+            [
+                [1.0, 0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0, 0.0],
+            ]
+        ).flatten(),
+    )
+    em_kcbs_sign = EmpiricalModel(
+        ms_kcbs,
+        np.array(
+            [
+                [1.0, 0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0, 0.0],
+            ]
+        ).flatten(),
+    )
+    em_kcbs_invalid = EmpiricalModel(
+        ms_kcbs,
+        np.array(
+            [
+                [1.0, 0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0, 0.0],
+            ]
+        ).flatten(),
+    )
+    em_kcbs_quantum = EmpiricalModel(
+        ms_kcbs,
+        [
+            [0.0, 0.4472136, 0.4472136, 0.1055728],
+            [0.0, 0.4472136, 0.4472136, 0.1055728],
+            [0.0, 0.4472136, 0.4472136, 0.1055728],
+            [0.0, 0.4472136, 0.4472136, 0.1055728],
+            [-0.0, 0.4472136, 0.4472136, 0.1055728],
+        ],
+    )
 
     rand_vect_kcbs = np.random.rand(20).reshape(5, 4)
     rand_vect_kcbs /= rand_vect_kcbs.sum(axis=1, keepdims=True)
     em_kcbs_rand = EmpiricalModel(ms_kcbs, rand_vect_kcbs)
-    
+
     @staticmethod
-    def compatibility_of_marginals_constraints(em: EmpiricalModel, EM_vector: cp.Variable) -> List:
+    def compatibility_of_marginals_constraints(
+        em: EmpiricalModel, EM_vector: cp.Variable
+    ) -> List:
         O, M = em.measurement_scenario.O, em.measurement_scenario.M
         outcomes = list(itertools.product(O, repeat=len(M[0])))
         nb_outcomes = len(outcomes)
@@ -133,8 +185,8 @@ class TestEmpiricalModel:
                         ctx_2_indices[outcome[j_ctx2]].append(k)
 
                     # Finally get the context and add the constraint
-                    h_NS_ctx1 = EM_vector[i * nb_outcomes: (i + 1) * nb_outcomes]
-                    h_NS_ctx2 = EM_vector[j * nb_outcomes: (j + 1) * nb_outcomes]
+                    h_NS_ctx1 = EM_vector[i * nb_outcomes : (i + 1) * nb_outcomes]
+                    h_NS_ctx2 = EM_vector[j * nb_outcomes : (j + 1) * nb_outcomes]
 
                     for ind1, ind2 in zip(ctx_1_indices, ctx_2_indices):
                         m_ctx1 = cp.Constant(0)
@@ -147,7 +199,9 @@ class TestEmpiricalModel:
         return constraints
 
     @staticmethod
-    def compute_sf_legacy(em: EmpiricalModel, solver: str = "MOSEK", verbose: bool = False) -> Dict[str, Any]:
+    def compute_sf_legacy(
+        em: EmpiricalModel, solver: str = "MOSEK", verbose: bool = False
+    ) -> Dict[str, Any]:
         MS = em.measurement_scenario
         ve = em.vector
 
@@ -167,9 +221,11 @@ class TestEmpiricalModel:
 
         # Forces the normalization with respect to lambda
         for i in range(0, nb_entries, nb_outcomes):
-            constraints += [cp.sum(h_NS[i: i + nb_outcomes]) == z]
+            constraints += [cp.sum(h_NS[i : i + nb_outcomes]) == z]
 
-        constraints += TestEmpiricalModel.compatibility_of_marginals_constraints(em, h_NS)
+        constraints += TestEmpiricalModel.compatibility_of_marginals_constraints(
+            em, h_NS
+        )
 
         prob = cp.Problem(cp.Maximize(z), constraints)
         prob.solve(solver=solver, verbose=verbose)
@@ -179,16 +235,13 @@ class TestEmpiricalModel:
 
         return {"SF": SF, "NSF": NSF, "h_NS": EmpiricalModel(MS, h_NS.value)}
 
-
-
     def test_empirical_model_instances(self):
         # Without value for the em
-        em1 = EmpiricalModel(self.ms_chsh)
+        EmpiricalModel(self.ms_chsh)
 
         # With some value for em
         emtest = self.EMPIRICAL_MODELS["CHSH"]
-        em2 = EmpiricalModel(self.ms_chsh, emtest)
-
+        EmpiricalModel(self.ms_chsh, emtest)
 
     def test_measurement_scenario(self):
         # Without value for the em
@@ -197,7 +250,6 @@ class TestEmpiricalModel:
 
         assert em1.measurement_scenario == self.ms_chsh
         assert em2.measurement_scenario == self.ms_kcbs
-
 
     def test_is_deterministic(self):
         assert self.em_chsh_det.is_deterministic
@@ -210,7 +262,6 @@ class TestEmpiricalModel:
         assert self.em_kcbs_sign.is_deterministic
         assert not self.em_kcbs_invalid.is_deterministic
 
-
     def test_is_valid(self):
         assert self.em_chsh_pr.is_valid
         assert self.em_chsh_det.is_valid
@@ -222,20 +273,23 @@ class TestEmpiricalModel:
         assert self.em_kcbs_sign.is_valid
         assert not self.em_kcbs_invalid.is_valid
 
-
     def test_vector(self):
         assert (self.em_chsh_invalid.vector == np.zeros(16)).all()
-        assert (self.em_chsh_sign.vector == self.EMPIRICAL_MODELS['MS']).all()
-        assert (self.em_chsh_pr.vector == self.EMPIRICAL_MODELS['PRBOX']).all()
-        assert (self.em_chsh_det.vector == self.EMPIRICAL_MODELS['FD']).all()
-
+        assert (self.em_chsh_sign.vector == self.EMPIRICAL_MODELS["MS"]).all()
+        assert (self.em_chsh_pr.vector == self.EMPIRICAL_MODELS["PRBOX"]).all()
+        assert (self.em_chsh_det.vector == self.EMPIRICAL_MODELS["FD"]).all()
 
     def test_mvector(self):
         assert (self.em_chsh_invalid.mvector == np.zeros(16).reshape(4, 4)).all()
-        assert (self.em_chsh_sign.mvector == self.EMPIRICAL_MODELS['MS'].reshape(4, 4)).all()
-        assert (self.em_chsh_pr.mvector == self.EMPIRICAL_MODELS['PRBOX'].reshape(4, 4)).all()
-        assert (self.em_chsh_det.mvector == self.EMPIRICAL_MODELS['FD'].reshape(4, 4)).all()
-
+        assert (
+            self.em_chsh_sign.mvector == self.EMPIRICAL_MODELS["MS"].reshape(4, 4)
+        ).all()
+        assert (
+            self.em_chsh_pr.mvector == self.EMPIRICAL_MODELS["PRBOX"].reshape(4, 4)
+        ).all()
+        assert (
+            self.em_chsh_det.mvector == self.EMPIRICAL_MODELS["FD"].reshape(4, 4)
+        ).all()
 
     def test_quantum_realisation(self):
         angle = np.pi / 5
@@ -263,23 +317,28 @@ class TestEmpiricalModel:
         ps = [ket2dm(k) for k in [ket1, ket2, ket3, ket4, ket5]]
         obs = [identity(3) - 2 * P for P in ps]
         pvms = [
-            [ket2dm(a.eigenstates()[1][0]).full(), (ket2dm(a.eigenstates()[1][1]) + ket2dm(a.eigenstates()[1][2])).full()]
-            for a in obs]
+            [
+                ket2dm(a.eigenstates()[1][0]).full(),
+                (ket2dm(a.eigenstates()[1][1]) + ket2dm(a.eigenstates()[1][2])).full(),
+            ]
+            for a in obs
+        ]
 
         em = EmpiricalModel(MeasurementScenarioImplementations.kcbs())
         rho = ket2dm(two).unit().full()
         em.quantum_realisation(rho, pvms)
 
-        expected_em = np.array([
-            0, 0.45, 0.45, 0.11,
-            0, 0.45, 0.45, 0.11,
-            0, 0.45, 0.45, 0.11,
-            0, 0.45, 0.45, 0.11,
-            0, 0.45, 0.45, 0.11,
-        ])
+        expected_em = np.array(
+            [
+                [0, 0.45, 0.45, 0.11],
+                [0, 0.45, 0.45, 0.11],
+                [0, 0.45, 0.45, 0.11],
+                [0, 0.45, 0.45, 0.11],
+                [0, 0.45, 0.45, 0.11],
+            ]
+        ).flatten()
 
         assert np.isclose(em.vector, expected_em, atol=0.01).all()
-
 
     def test_get_signalling_variables(self):
         # Check when signalling variables are computed without error
@@ -289,7 +348,9 @@ class TestEmpiricalModel:
 
         signallings, value_per_context = self.em_kcbs_sign.get_signalling_variables()
         assert signallings == {0: True, 1: False, 2: False, 3: False, 4: False}
-        assert (value_per_context == np.array([[0, 0], [0, 0], [0, 0], [0, 0], [0, 1]])).all()
+        assert (
+            value_per_context == np.array([[0, 0], [0, 0], [0, 0], [0, 0], [0, 1]])
+        ).all()
 
         # Check without deterministic
 
@@ -298,14 +359,18 @@ class TestEmpiricalModel:
         with pytest.raises(ValueError):
             self.em_kcbs_pr.get_signalling_variables()
 
-
     def test_probability_outcome(self):
         # PR box should be 0.5 for all contexts and observables
         for c in range(4):
             ctx = self.ms_chsh.M[c]
             for obs in ctx:
                 for out in [0, 1]:
-                    assert np.isclose(self.em_chsh_pr.probability_outcome(out, ctx, obs), 0.5, rtol=1e-09, atol=1e-09)
+                    assert np.isclose(
+                        self.em_chsh_pr.probability_outcome(out, ctx, obs),
+                        0.5,
+                        rtol=1e-09,
+                        atol=1e-09,
+                    )
 
         # For determinist should always be 0 or 1
         for c in range(4):
@@ -326,7 +391,6 @@ class TestEmpiricalModel:
             assert prob_0_o2 == self.em_chsh_rand.probability_outcome(0, ctx, ctx[1])
             assert prob_1_o2 == self.em_chsh_rand.probability_outcome(1, ctx, ctx[1])
 
-
     def test_maximum_incompatibility_of_marginals(self):
         # No signalling should be 0
         assert self.em_chsh_pr.maximum_incompatibility_of_marginals() == 0
@@ -335,7 +399,6 @@ class TestEmpiricalModel:
         # Fully signalling should be 1
         assert self.em_chsh_sign.maximum_incompatibility_of_marginals() == 1
         assert self.em_kcbs_sign.maximum_incompatibility_of_marginals() == 1
-
 
     def test_compute_sf(self):
         # No signalling should have SF 0
@@ -351,9 +414,9 @@ class TestEmpiricalModel:
         tol = 1e-5
         # Random empirical models should have SF between 0 and 1
         sf_chsh_rand = self.em_chsh_rand.compute_sf(solver=SOLVER)["SF"]
-        assert - tol < sf_chsh_rand < 1 + tol
+        assert -tol < sf_chsh_rand < 1 + tol
         sf_kcbs_rand = self.em_kcbs_rand.compute_sf(solver=SOLVER)["SF"]
-        assert - tol < sf_kcbs_rand < 1 + tol
+        assert -tol < sf_kcbs_rand < 1 + tol
 
         # SF should be convex
         l = np.random.rand()
@@ -365,16 +428,18 @@ class TestEmpiricalModel:
         sf_kcbs_convex = em_kcbs_convex.compute_sf(solver=SOLVER)["SF"]
         assert sf_kcbs_convex <= (1 - l) * sf_chsh_pr + l * sf_kcbs_rand + tol
 
-
     def test_compute_sf_legacy(self):
         sf_chsh_rand = self.em_chsh_rand.compute_sf(solver=SOLVER)["SF"]
         sf_kcbs_rand = self.em_kcbs_rand.compute_sf(solver=SOLVER)["SF"]
-        sf_chsh_rand_legacy = TestEmpiricalModel.compute_sf_legacy(self.em_chsh_rand, solver=SOLVER)["SF"]
-        sf_kcbs_rand_legacy = TestEmpiricalModel.compute_sf_legacy(self.em_kcbs_rand, solver=SOLVER)["SF"]
+        sf_chsh_rand_legacy = TestEmpiricalModel.compute_sf_legacy(
+            self.em_chsh_rand, solver=SOLVER
+        )["SF"]
+        sf_kcbs_rand_legacy = TestEmpiricalModel.compute_sf_legacy(
+            self.em_kcbs_rand, solver=SOLVER
+        )["SF"]
 
         assert np.isclose(sf_chsh_rand, sf_chsh_rand_legacy)
         assert np.isclose(sf_kcbs_rand, sf_kcbs_rand_legacy)
-
 
     def test_compute_cf(self):
         # Det should have CF 0
@@ -398,9 +463,9 @@ class TestEmpiricalModel:
         tol = 1e-5
         # Random empirical models should have CF between 0 and 1
         cf_chsh_rand = self.em_chsh_rand.compute_cf(solver=SOLVER)["CF"]
-        assert - tol < cf_chsh_rand < 1 + tol
+        assert -tol < cf_chsh_rand < 1 + tol
         cf_kcbs_rand = self.em_kcbs_rand.compute_cf(solver=SOLVER)["CF"]
-        assert - tol < cf_kcbs_rand < 1 + tol
+        assert -tol < cf_kcbs_rand < 1 + tol
 
         # CF should be convex
         l = np.random.rand()
@@ -411,10 +476,62 @@ class TestEmpiricalModel:
         em_kcbs_convex = (1 - l) * self.em_kcbs_pr + l * self.em_kcbs_rand
         cf_kcbs_convex = em_kcbs_convex.compute_cf(solver=SOLVER)["CF"]
         assert cf_kcbs_convex <= (1 - l) * cf_chsh_pr + l * cf_kcbs_rand + tol
-        
-    def test_compute_dual_cf(self):
-        pass
 
+    def test_compute_dual_cf(self):
+        # Test CHSH dual
+        # Probabilistic inequality p(a = b | AB) + p(a = b | AB') + p(a = b | A'B) + p(a != b | A'B') <= 3
+        dual = self.quantum_em.compute_dual_cf()
+        coefficients = dual["a"]
+
+        expected_coefficients = [
+            0.25,
+            -0.75,
+            -0.75,
+            0.25,
+            0.25,
+            -0.75,
+            -0.75,
+            0.25,
+            0.25,
+            -0.75,
+            -0.75,
+            0.25,
+            -0.75,
+            0.25,
+            0.25,
+            -0.75,
+        ]
+
+        assert np.isclose(coefficients, expected_coefficients).all()
+
+        # Similarly for KCBS
+        # The known inequality is $\sum_{i=0}^{i=4} p(a_i = a_{i+1} | A_i A_{i+1}) >= 1$
+        dual_kcbs = self.em_kcbs_quantum.compute_dual_cf()
+        coefficients = dual_kcbs["a"]
+        expected_coefficients = [
+            -0.8,
+            0.2,
+            0.2,
+            -0.8,
+            -0.8,
+            0.2,
+            0.2,
+            -0.8,
+            -0.8,
+            0.2,
+            0.2,
+            -0.8,
+            -0.8,
+            0.2,
+            0.2,
+            -0.8,
+            -0.8,
+            0.2,
+            0.2,
+            -0.8
+        ]
+        
+        assert np.isclose(coefficients, expected_coefficients).all()
 
     def test_mul_div_add(self):
         # Creating two random empirical models
@@ -426,7 +543,12 @@ class TestEmpiricalModel:
         rand_vect_chsh_2 /= rand_vect_chsh_2.sum(axis=1, keepdims=True)
         em_chsh_rand_2 = EmpiricalModel(self.ms_chsh, rand_vect_chsh_2)
 
-        assert np.isclose((0.5 * em_chsh_rand_1).mvector, rand_vect_chsh_1 * 0.5, rtol=1e-09, atol=1e-09).all()
+        assert np.isclose(
+            (0.5 * em_chsh_rand_1).mvector,
+            rand_vect_chsh_1 * 0.5,
+            rtol=1e-09,
+            atol=1e-09,
+        ).all()
         assert ((2 * em_chsh_rand_2).mvector == rand_vect_chsh_2 * 2).all()
 
         with pytest.raises(ValueError):
@@ -436,7 +558,12 @@ class TestEmpiricalModel:
             _ = em_chsh_rand_1 * em_chsh_rand_2
 
         assert ((em_chsh_rand_1 / 2).mvector == rand_vect_chsh_1 / 2).all()
-        assert np.isclose((em_chsh_rand_2 / 0.5).mvector, rand_vect_chsh_2 / 0.5, rtol=1e-09, atol=1e-09).all()
+        assert np.isclose(
+            (em_chsh_rand_2 / 0.5).mvector,
+            rand_vect_chsh_2 / 0.5,
+            rtol=1e-09,
+            atol=1e-09,
+        ).all()
 
         with pytest.raises(ValueError):
             _ = em_chsh_rand_1 / (1.5 + 2j)
@@ -450,19 +577,17 @@ class TestEmpiricalModel:
         expected_mvector = (1 - l) * rand_vect_chsh_1 + l * rand_vect_chsh_2
         assert (em_chsh_sum.mvector == expected_mvector).all()
 
-
     def test_str_representation(self):
         # Test the string representation of empirical models
         string_repr_chsh = str(self.em_chsh_pr)
-        assert string_repr_chsh.split('\n')[0] == f"EmpiricalModel({self.ms_chsh}"
-        assert string_repr_chsh.split('\n')[-1] == ")"
+        assert string_repr_chsh.split("\n")[0] == f"EmpiricalModel({self.ms_chsh}"
+        assert string_repr_chsh.split("\n")[-1] == ")"
 
         string_repr_kcbs = str(self.em_kcbs_det)
-        assert string_repr_kcbs.split('\n')[0] == f"EmpiricalModel({self.ms_kcbs}"
-        assert string_repr_kcbs.split('\n')[-1] == ")"
+        assert string_repr_kcbs.split("\n")[0] == f"EmpiricalModel({self.ms_kcbs}"
+        assert string_repr_kcbs.split("\n")[-1] == ")"
 
         # Test empty empirical model
         em_empty = EmpiricalModel(self.ms_pm)
         string_repr_empty = str(em_empty)
         assert string_repr_empty == f"EmpiricalModel({self.ms_pm})"
-
