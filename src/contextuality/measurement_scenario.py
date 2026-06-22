@@ -82,7 +82,7 @@ class MeasurementScenario:
         :return: A list of lists of attributions.
 
         Example:
-        >>> ms = MeasurementScenarioImplementations.CHSH()
+        >>> ms = MeasurementScenarioImplementations.chsh()
         >>> ms.outcomes_global
         [0,0,0,0], [0,0,0,1], [0,0,1,0], [0,0,1,1], [0,1,0,0], ...
         """
@@ -201,7 +201,7 @@ class MeasurementScenario:
         :return: A list of all the outcomes for a given context.
 
         :example:
-        >>> ms = MeasurementScenarioImplementations.CHSH()
+        >>> ms = MeasurementScenarioImplementations.chsh()
         >>> ms.all_outcomes
         [(0, 0), (0, 1), (1, 0), (1, 1)]
         """

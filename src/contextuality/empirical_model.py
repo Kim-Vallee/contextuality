@@ -139,7 +139,7 @@ class EmpiricalModel:
         Example:
 
         >>> from contextuality import MeasurementScenarioImplementations, EmpiricalModel
-        >>> ms = MeasurementScenarioImplementations.KCBS()
+        >>> ms = MeasurementScenarioImplementations.kcbs()
         >>> em = EmpiricalModel(ms, [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0])
         >>> signalling_vars, values_per_context = em.get_signalling_variables()
         >>> print(signalling_vars)
@@ -302,6 +302,47 @@ class EmpiricalModel:
 
         return {"opt_sol": b.value, "NCF": prob.value, "CF": 1 - prob.value}
 
+    def compute_dual_cf(self, solver: str = "MOSEK", verbose: bool = False) -> Dict[str, float]:
+        """Compute the dual program of the contextual fraction
+
+        :param solver: The solver used for cvxpy. Defaults to "MOSEK".
+        :param verbose: Whether the solver should verbose. Defaults to False.
+        :return: A dictionary with the optimal solution and 'a', the coefficients of the closest inequality
+        
+        Example:
+        
+        >>> from contextuality import MeasurementScenarioImplementations, EmpiricalModel
+        >>> ms = MeasurementScenarioImplementations.chsh()
+        >>> quantum_em = EmpiricalModel(
+                ms_chsh,
+                [
+                    [0.4267767, 0.0732233, 0.0732233, 0.4267767],
+                    [0.4267767, 0.0732233, 0.0732233, 0.4267767],
+                    [0.4267767, 0.0732233, 0.0732233, 0.4267767],
+                    [0.0732233, 0.4267767, 0.4267767, 0.0732233],
+                ],
+            )
+        >>> coefficients = quantum_em.compute_dual_cf()["a"] 
+        """
+        ms = self.measurement_scenario
+        ve = self.vector
+
+        # NOTE: formula valid only if the context have the same length
+        m = len(ms.all_outcomes) * len(ms.M)
+
+        y = cp.Variable(m, nonneg=True)
+
+        incidence_matrix = ms.incidence_matrix
+
+        constraints = [incidence_matrix.T @ y >= 1]
+
+        prob = cp.Problem(cp.Minimize(y @ ve), constraints)
+        prob.solve(solver=solver, verbose=verbose)
+
+        a = (1 / len(ms.M)) * np.ones(m) - y
+        
+        return {"opt_sol": y.value, "a": a.value}
+    
     def __mul__(self, other: Union[int, float]) -> "EmpiricalModel":
         """
         Define the multiplication with a float or int.
