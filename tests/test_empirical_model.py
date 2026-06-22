@@ -480,7 +480,7 @@ class TestEmpiricalModel:
     def test_compute_dual_cf(self):
         # Test CHSH dual
         # Probabilistic inequality p(a = b | AB) + p(a = b | AB') + p(a = b | A'B) + p(a != b | A'B') <= 3
-        dual = self.quantum_em.compute_dual_cf()
+        dual = self.quantum_em.compute_dual_cf(solver=SOLVER)
         coefficients = dual["a"]
 
         expected_coefficients = [
@@ -506,7 +506,7 @@ class TestEmpiricalModel:
 
         # Similarly for KCBS
         # The known inequality is $\sum_{i=0}^{i=4} p(a_i = a_{i+1} | A_i A_{i+1}) >= 1$
-        dual_kcbs = self.em_kcbs_quantum.compute_dual_cf()
+        dual_kcbs = self.em_kcbs_quantum.compute_dual_cf(solver=SOLVER)
         coefficients = dual_kcbs["a"]
         expected_coefficients = [
             -0.8,
