@@ -1,5 +1,5 @@
 Printing module
-======================
+===============
 
 Module description
 ------------------
