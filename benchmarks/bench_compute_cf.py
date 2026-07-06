@@ -125,7 +125,7 @@ if __name__ == "__main__":
         }
     }
     
-    total = 15
+    total = 12
     
     for n in range(4,total + 1):
         print("-"*10 + f"{n}/{total}" + "-"*10)
