@@ -240,14 +240,7 @@ class EmpiricalModel:
         SF = 1 - prob.value
         NSF = prob.value
 
-        vec = incidence_matrix @ b.value
-        # Normalize
-        if np.sum(vec, axis=0) <= 0:
-            h_ns = np.zeros(vec.shape)
-        else:
-            h_ns = vec / np.sum(vec, axis=0)
-
-        return {"SF": SF, "NSF": NSF, "h_NS": EmpiricalModel(self.measurement_scenario, h_ns)}
+        return {"SF": SF, "NSF": NSF, "opt_sol": b.value}
 
     def compute_cf(self, eta: float = 0, solver: str = "MOSEK", verbose: bool = False) -> Dict[str, float]:
         """
