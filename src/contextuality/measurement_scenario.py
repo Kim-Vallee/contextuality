@@ -302,6 +302,8 @@ class GeneralizedMeasurementScenario(MeasurementScenario):
                  PE: Dict[Union[str, Symbol, Expr], Union[str, Symbol, Expr]]):
         super().__init__(X, M, O)
 
+        warnings.warn("Experimental feature, to be used wisely.")
+        
         if isinstance(X[0], int):
             raise NotImplementedError("As of now this class only supports symbolic variables.")
 
