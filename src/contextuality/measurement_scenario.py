@@ -336,33 +336,3 @@ class GeneralizedMeasurementScenario(MeasurementScenario):
     @property
     def incidence_matrix(self) -> ndarray:
         return super().incidence_matrix
-
-
-if __name__ == '__main__':
-    from contextuality.empirical_model import EmpiricalModel
-    from contextuality.utils import compute_signaling_fraction
-    from contextuality.constants import EMPIRICAL_MODELS
-
-    X = [i for i in range(4)]
-    M = [[0, 2], [0, 3], [1, 2], [1, 3]]
-    O = [0, 1]
-
-    n = 10
-    SFs = np.zeros(n)
-    space = np.linspace(0, 1, n)
-
-    # CHSH
-    for i, a in enumerate(space):
-        vector = a * EMPIRICAL_MODELS["MS"] + (1 - a) * EMPIRICAL_MODELS["PRBOX"]
-        chsh = MeasurementScenario(X, M, O)
-        empirical_model = EmpiricalModel(chsh, vector)
-
-        result = compute_signaling_fraction(empirical_model, verbose=False)
-        SFs[i] = result['SF']
-
-    plt.plot(space, SFs, '.-', label=r"$c_{MS}$")
-    plt.xlabel(r"$a$")
-    plt.ylabel(r"$\eta$")
-    plt.title(r"$ a \cdot v^e_{MS} + (1 - a) \cdot v^e_{PRBOX} $")
-    plt.legend()
-    plt.show()
