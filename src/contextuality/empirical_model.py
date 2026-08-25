@@ -280,13 +280,11 @@ class EmpiricalModel:
         ms = self.measurement_scenario
         ve = self.vector
 
-        outcomes_global = ms.outcomes_global
-
-        n = len(outcomes_global)
+        incidence_matrix = ms.incidence_matrix
+        
+        n = len(incidence_matrix[0])
 
         b = cp.Variable(n, nonneg=True)
-
-        incidence_matrix = ms.incidence_matrix
 
         constraints = [incidence_matrix @ b <= ve]
 
