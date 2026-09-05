@@ -476,6 +476,42 @@ class TestEmpiricalModel:
         em_kcbs_convex = (1 - l) * self.em_kcbs_pr + l * self.em_kcbs_rand
         cf_kcbs_convex = em_kcbs_convex.compute_cf(solver=SOLVER)["CF"]
         assert cf_kcbs_convex <= (1 - l) * cf_chsh_pr + l * cf_kcbs_rand + tol
+    
+    def compute_cf_noisy(self):
+        eta = np.random.rand() * 0.5
+        
+        # Det should have CF 0
+        cf_chsh_det = self.em_chsh_det.compute_cf_noisy(solver=SOLVER, eta=eta)["CF"]
+        cf_kcbs_det = self.em_kcbs_det.compute_cf_noisy(solver=SOLVER, eta=eta)["CF"]
+        assert np.isclose(cf_chsh_det, 0)
+        assert np.isclose(cf_kcbs_det, 0)
+
+        # PR should have CF 1
+        cf_chsh_pr = self.em_chsh_pr.compute_cf_noisy(solver=SOLVER, eta=eta)["CF"]
+        cf_kcbs_pr = self.em_kcbs_pr.compute_cf_noisy(solver=SOLVER, eta=eta)["CF"]
+        assert np.isclose(cf_chsh_pr, 1 - 2*eta)
+        assert np.isclose(cf_kcbs_pr, 1 - 2*eta)
+
+        # Fully signalling should have CF 1
+        cf_chsh_sign = self.em_chsh_sign.compute_cf_noisy(solver=SOLVER, eta=eta)["CF"]
+        cf_kcbs_sign = self.em_kcbs_sign.compute_cf_noisy(solver=SOLVER, eta=eta)["CF"]
+        assert np.isclose(cf_chsh_sign, 1 - 2*eta)
+        assert np.isclose(cf_kcbs_sign, 1 - 2*eta)
+
+        # Random empirical models should have CF between 0 and 1
+        cf_chsh_rand = self.em_chsh_rand.compute_cf_noisy(solver=SOLVER)["CF"]
+        cf_chsh_rand_eta = self.em_chsh_rand.compute_cf_noisy(solver=SOLVER, eta=eta)["CF"]
+        if eta > 0:
+            assert cf_chsh_rand > cf_chsh_rand_eta
+        else:
+            assert cf_chsh_rand == cf_chsh_rand_eta
+        
+        cf_kcbs_rand = self.em_kcbs_rand.compute_cf_noisy(solver=SOLVER)["CF"]
+        cf_kcbs_rand_eta = self.em_kcbs_rand.compute_cf_noisy(solver=SOLVER, eta=eta)["CF"]
+        if eta > 0:
+            assert cf_kcbs_rand > cf_kcbs_rand_eta
+        else:
+            assert cf_kcbs_rand == cf_kcbs_rand_eta
 
     def test_compute_dual_cf(self):
         # Test CHSH dual
