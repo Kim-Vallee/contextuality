@@ -242,17 +242,42 @@ class EmpiricalModel:
 
         return {"SF": SF, "NSF": NSF, "opt_sol": b.value}
 
-    def compute_cf(self, eta: float = 0, solver: str = "MOSEK", verbose: bool = False) -> Dict[str, float]:
+    def compute_cf(self, solver: str = "MOSEK", verbose: bool = False):
         """
         Compute the Non-Contextual Fraction (NCF) of this empirical model.
 
-        :param eta: Value of the non-determinism allowed.
+        :param solver: The solver used for cvxpy. Defaults to "MOSEK".
+        :param verbose: Whether the solver should verbose. Defaults to False.
+        :return: The NCF, CF and the optimal description by NC model.
+        """
+        ms = self.measurement_scenario
+        ve = self.vector
+
+        incidence_matrix = ms.incidence_matrix
+        
+        n = len(incidence_matrix[0])
+
+        b = cp.Variable(n, nonneg=True)
+
+        constraints = [incidence_matrix @ b <= ve]
+
+        prob = cp.Problem(cp.Maximize(np.ones(n).T @ b), constraints)
+        prob.solve(solver=solver, verbose=verbose)
+
+        return {"opt_sol": b.value, "NCF": prob.value, "CF": 1 - prob.value}
+
+
+    def compute_cf_noisy(self, eta: float = 0, solver: str = "MOSEK", verbose: bool = False) -> Dict[str, float]:
+        """
+        Compute the Non-Contextual Fraction (NCF) of this empirical model, considering HVM with eta indeterminism.
+
+        :param eta: Value of indeterminism allowed.
         :param solver: The solver used for cvxpy. Defaults to "MOSEK".
         :param verbose: Whether the solver should verbose. Defaults to False.
         :return: The NCF, CF and the optimal description by NC model.
         """
         if eta == 0:
-            return self._compute_cf_deterministic(solver, verbose)
+            return self.compute_cf(solver, verbose)
 
         ms = self.measurement_scenario
         ve = self.vector
@@ -276,22 +301,6 @@ class EmpiricalModel:
         return {"opt_sol_nc": b_nc.value, "opt_sol_s": b.value, "NCF": prob.value, "CF": 1 - prob.value,
                 "behaviour": incidence_matrix_signalling @ b.value + incidence_matrix @ b_nc.value}
 
-    def _compute_cf_deterministic(self, solver: Union[str, None] = "MOSEK", verbose: bool = False):
-        ms = self.measurement_scenario
-        ve = self.vector
-
-        incidence_matrix = ms.incidence_matrix
-        
-        n = len(incidence_matrix[0])
-
-        b = cp.Variable(n, nonneg=True)
-
-        constraints = [incidence_matrix @ b <= ve]
-
-        prob = cp.Problem(cp.Maximize(np.ones(n).T @ b), constraints)
-        prob.solve(solver=solver, verbose=verbose)
-
-        return {"opt_sol": b.value, "NCF": prob.value, "CF": 1 - prob.value}
 
     def compute_dual_cf(self, solver: str = "MOSEK", verbose: bool = False) -> Dict[str, float]:
         """Compute the dual program of the contextual fraction
