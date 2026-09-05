@@ -13,7 +13,7 @@
 import abc
 import itertools
 import warnings
-from typing import List, Tuple, Iterable, Union, Dict
+from typing import List, Literal, Tuple, Iterable, Union, Dict
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -21,8 +21,11 @@ from numpy import ndarray
 from sympy import Symbol, Expr, sympify, Basic
 from sympy.parsing.sympy_parser import parse_expr
 
+from contextuality.utils import polytope_to_h
+
 int_or_symbol = Union[int, Symbol, str]
 
+ReprType = Literal["V", "H", "BOTH"]
 
 class MeasurementScenario:
     """
@@ -61,6 +64,8 @@ class MeasurementScenario:
         self._incidence_matrix_constrained = None
         self._incidence_matrix_signalling = None
         self._all_outcomes = list(itertools.product(self.O, repeat=len(M[0])))
+        self._cache_nc_polytope_h = {}
+        self._cache_s_polytope_h = {}
 
     @property
     def X(self) -> List[Union[Symbol, int]]:
@@ -218,7 +223,89 @@ class MeasurementScenario:
         for i, pos in enumerate(positions):
             empirical_vector[i, pos] = 1
         return empirical_vector.flatten()
+    
+    
+    def nc_polytope(self, representation: ReprType = "V") \
+            -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
+        """
+        Polytope for the Non-Contextual set.
 
+        :param representation: Representation expected as a return, can only be "H", "V" or "BOTH".
+        :return: The NC polytope in the form of a matrix representation H, V or BOTH.
+        """
+        X, M, O = self.X, self.M, self.O
+        outcomes_assignements = list(itertools.product([0, 1], repeat=len(X)))
+        v_repr_nc = []
+        for assignement in outcomes_assignements:
+            d = []
+            for context in M:
+                outcomes = itertools.product(O, repeat=len(context))
+                for outcome in outcomes:
+                    if list(outcome) == [assignement[i] for i in context]:
+                        d.append(1)
+                    else:
+                        d.append(0)
+            v_repr_nc.append(d)
+
+        v_repr_nc = np.array(D)
+        if representation == "V":
+            return v_repr_nc
+
+        self._cache_nc_polytope_h[self] = self._cache_nc_polytope_h.get(self, None)
+        if self._cache_nc_polytope_h[self] is None:
+            self._cache_nc_polytope_h[self] = polytope_to_h(v_repr_nc)
+
+        h_repr_nc = self._cache_nc_polytope_h[self]
+        if representation == "h_repr_nc":
+            return h_repr_nc
+
+        return v_repr_nc, h_repr_nc
+
+    
+    def signalling_polytope(self, representation: ReprType = "V") -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
+        """
+        Polytope for the signalling set.
+
+        :param representation: Representation expected as a return, can only be "H", "V" or "BOTH".
+        :return: The NC polytope in the form of a matrix representation H, V or BOTH.
+        """
+        O, M = self.O, self.M
+
+        def permutations_without_rep(length: int):
+            for positions in map(set, itertools.combinations(range(length), length - 1)):
+                yield ''.join('10'[i in positions] for i in range(length))
+
+        v_repr_s = []
+        for context in M:
+            ctx_outcomes = list(itertools.product(O, repeat=len(context)))
+            permutations = list(permutations_without_rep(len(ctx_outcomes)))
+            v_repr_s = [previous_permutations + new_permutation for previous_permutations in v_repr_s for new_permutation in permutations]
+
+        v_repr_s = np.array([[int(i) for i in list(d)] for d in v_repr_s])
+
+        v_repr_ns = self.nc_polytope()
+        v_repr_full = np.array([row for row in v_repr_s if not (row == v_repr_ns).all(axis=1).any()])
+
+        if representation == "V":
+            return v_repr_full
+        
+        self._cache_s_polytope_h[self] = self._cache_s_polytope_h.get(self, None)
+        if self._cache_s_polytope_h[self] is None:
+            self._cache_s_polytope_h[self] = polytope_to_h(v_repr_full)
+
+        h_repr_full = self._cache_s_polytope_h[self]
+        if representation == "H":
+            return h_repr_full
+
+        return v_repr_full, h_repr_full
+    
+    def __hash__(self):
+        X_hash = ",".join([str(x) for x in sorted(self.X)])
+        M_hash = ",".join(["".join([str(o) for o in ctx]) for ctx in sorted(self.M)])
+        O_hash = ",".join([str(o) for o in sorted(self.O)])
+        
+        return hash((X_hash, M_hash, O_hash))
+    
     def __eq__(self, other: 'MeasurementScenario') -> bool:
         """
         Defines equality between two measurement scenarios.
