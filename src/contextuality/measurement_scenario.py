@@ -256,9 +256,9 @@ class MeasurementScenarioImplementations(abc.ABC):
     @staticmethod
     def chsh() -> MeasurementScenario:
         """ Generates the CHSH MeasurementScenario class. """
-        O = [0, 1]
         X = list(range(4))
         M = [[a, b] for a in X[:2] for b in X[2:]]
+        O = [0, 1]
         return MeasurementScenario(X, M, O)
 
     @staticmethod
@@ -269,7 +269,7 @@ class MeasurementScenarioImplementations(abc.ABC):
     @staticmethod
     def kcbs() -> MeasurementScenario:
         """ Generates the KCBS MeasurementScenario class. """
-        X = [i for i in range(5)]
+        X = list(range(5))
         M = [[i, i + 1] for i in range(4)] + [[4, 0]]
         O = [0, 1]
         return MeasurementScenario(X, M, O)
