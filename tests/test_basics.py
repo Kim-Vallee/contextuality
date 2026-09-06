@@ -5,7 +5,6 @@ from contextuality.measurement_scenario import *
 from contextuality.constants import *
 from contextuality.utils import *
 from contextuality.printing import *
-import qutip
 from qutip import ket2dm, identity, basis
 
 
@@ -28,7 +27,8 @@ def test_empirical_model_magic_properties():
     em_invalid = EmpiricalModel(chsh, np.array([1] * 16))
 
     assert em_det.is_deterministic
-    assert em_nondet.is_valid and not em_nondet.is_deterministic
+    assert em_nondet.is_valid
+    assert not em_nondet.is_deterministic
     assert not em_invalid.is_valid
     assert (em_det.vector == EMPIRICAL_MODELS['FD']).all()
 

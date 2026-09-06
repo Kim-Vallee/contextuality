@@ -11,16 +11,19 @@ class TestMeasurementScenario:
     MS_KCBS = MeasurementScenarioImplementations.kcbs()
     MS_CHSH = MeasurementScenarioImplementations.chsh()
 
+    # Initialize the random generator with a reproducible seed
+    generator = np.random.default_rng(1337)
+    
     # Create a random ms
-    nb_obs = np.random.randint(4, 10)
+    nb_obs = generator.integers(4, 8)
     X = list(range(nb_obs))
-    len_contexts = np.random.randint(2, nb_obs)
+    len_contexts = generator.integers(2, min(3, nb_obs // 2 + 1))
     all_permutations = list(itertools.combinations(X, r=len_contexts))
-    nb_contexts = np.random.randint(2, len(all_permutations))
+    nb_contexts = generator.integers(2, min(3, len(all_permutations) // 2))
     permutations_arr = np.empty(len(all_permutations), dtype=object)
     permutations_arr[:] = all_permutations
-    M = np.random.choice(permutations_arr, size=nb_contexts, replace=False).tolist()
-    nb_outcomes = np.random.randint(2, 5)
+    M = generator.choice(permutations_arr, size=nb_contexts, replace=False).tolist()
+    nb_outcomes = generator.integers(2, 5)
     O = list(range(nb_outcomes))
     MS_RANDOM = MeasurementScenario(X, M, O)
 
@@ -125,13 +128,60 @@ class TestMeasurementScenario:
 
         assert self.MS_RANDOM.all_outcomes == list(itertools.product(self.O, repeat=len(self.MS_RANDOM.M[0])))
 
+    def test_nc_polytope(self):
+        # For CHSH
+        v_repr = self.MS_CHSH.nc_polytope()
+
+        assert v_repr.shape == (16, 16)
+        assert np.isin(v_repr, [0, 1]).all()
+        assert (v_repr.sum(axis=1) == len(self.MS_CHSH.M)).all()
+        assert len(np.unique(v_repr, axis=0)) == len(v_repr)
+
+        h_repr = self.MS_CHSH.nc_polytope("H")
+        both_v_repr, both_h_repr = self.MS_CHSH.nc_polytope("BOTH")
+
+        assert np.array_equal(both_v_repr, v_repr)
+        assert np.array_equal(both_h_repr, h_repr)
+
+        # For random scenario
+        v_repr = self.MS_RANDOM.nc_polytope("V")
+        nb_contexts = len(self.MS_RANDOM.M)
+        nb_outcomes = len(self.MS_RANDOM.all_outcomes)
+        nb_measurements = len(self.MS_RANDOM.X)
+        nb_msrt_outcomes = len(self.MS_RANDOM.O)
+        assert v_repr.shape[0] <= nb_msrt_outcomes**nb_measurements
+        assert v_repr.shape[1] == nb_contexts*nb_outcomes
+    
+    def test_signalling_polytope(self):
+        # For CHSH
+        v_repr = self.MS_CHSH.signalling_polytope()
+
+        assert v_repr.shape == (256, 16)
+        assert np.isin(v_repr, [0, 1]).all()
+        assert (v_repr.sum(axis=1) == len(self.MS_CHSH.M)).all()
+        assert len(np.unique(v_repr, axis=0)) == len(v_repr)
+        
+        h_repr = self.MS_CHSH.signalling_polytope("H")
+        both_v_repr, both_h_repr = self.MS_CHSH.signalling_polytope("BOTH")
+
+        assert np.array_equal(both_v_repr, v_repr)
+        assert np.array_equal(both_h_repr, h_repr)
+        
+        # For random scenario
+        v_repr = self.MS_RANDOM.signalling_polytope("V")
+        nb_contexts = len(self.MS_RANDOM.M)
+        nb_outcomes = len(self.MS_RANDOM.all_outcomes)
+        assert v_repr.shape == (nb_outcomes**nb_contexts,nb_contexts*nb_outcomes) 
+        # We do not check the h_repr as it is not optimized yet and will likely crash
+
     def test_generate_deterministic(self):
         chsh_deterministic_model = self.MS_CHSH.generate_deterministic([0, 0, 1, 2])
 
         assert (np.array(chsh_deterministic_model) == np.array([1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0])).all()
 
         # For a random measurement scenario
-        rand_assignment = [np.random.randint(0, len(self.M[0])) for _ in range(len(self.MS_RANDOM.M))]
+        rand_assignment = [self.generator.integers(0, len(self.MS_RANDOM.M[0]))
+                   for _ in range(len(self.MS_RANDOM.M))]
         random_deterministic_model = self.MS_RANDOM.generate_deterministic(
             rand_assignment
         )

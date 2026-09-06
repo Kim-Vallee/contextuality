@@ -4,9 +4,8 @@ from typing import Dict, Any, List
 import cvxpy as cp
 import numpy as np
 import pytest
-import re
 from numpy.typing import NDArray
-from qutip import ket2dm, identity, basis, tensor, sigmaz, sigmax
+from qutip import ket2dm, identity, basis
 
 from contextuality import MeasurementScenarioImplementations, MeasurementScenario
 from contextuality.empirical_model import EmpiricalModel
@@ -36,6 +35,7 @@ class TestEmpiricalModel:
     ms_chsh = MeasurementScenarioImplementations.chsh()
     ms_kcbs = MeasurementScenarioImplementations.kcbs()
     ms_pm = MeasurementScenarioImplementations.peres_mermin()
+    generator = np.random.default_rng(1337)
 
     EMPIRICAL_MODELS = {
         "CHSH": np.array(
@@ -76,7 +76,7 @@ class TestEmpiricalModel:
     em_chsh_det = EmpiricalModel(ms_chsh, EMPIRICAL_MODELS["FD"])
     em_chsh_invalid = EmpiricalModel(ms_chsh, np.zeros(16))
     em_chsh_sign = EmpiricalModel(ms_chsh, EMPIRICAL_MODELS["MS"])
-    rand_vect_chsh = np.random.rand(16).reshape(4, 4)
+    rand_vect_chsh = generator.random(16).reshape(4, 4)
     rand_vect_chsh /= rand_vect_chsh.sum(axis=1, keepdims=True)
     em_chsh_rand = EmpiricalModel(ms_chsh, rand_vect_chsh)
 
@@ -150,7 +150,7 @@ class TestEmpiricalModel:
         ],
     )
 
-    rand_vect_kcbs = np.random.rand(20).reshape(5, 4)
+    rand_vect_kcbs = generator.random(20).reshape(5, 4)
     rand_vect_kcbs /= rand_vect_kcbs.sum(axis=1, keepdims=True)
     em_kcbs_rand = EmpiricalModel(ms_kcbs, rand_vect_kcbs)
 
@@ -419,7 +419,7 @@ class TestEmpiricalModel:
         assert -tol < sf_kcbs_rand < 1 + tol
 
         # SF should be convex
-        l = np.random.rand()
+        l = self.generator.random()
         em_chsh_convex = (1 - l) * self.em_chsh_pr + l * self.em_chsh_rand
         sf_chsh_convex = em_chsh_convex.compute_sf(solver=SOLVER)["SF"]
         assert sf_chsh_convex <= (1 - l) * sf_chsh_pr + l * sf_chsh_rand + tol
@@ -468,7 +468,7 @@ class TestEmpiricalModel:
         assert -tol < cf_kcbs_rand < 1 + tol
 
         # CF should be convex
-        l = np.random.rand()
+        l = self.generator.random()
         em_chsh_convex = (1 - l) * self.em_chsh_pr + l * self.em_chsh_rand
         cf_chsh_convex = em_chsh_convex.compute_cf(solver=SOLVER)["CF"]
         assert cf_chsh_convex <= (1 - l) * cf_chsh_pr + l * cf_chsh_rand + tol
@@ -478,7 +478,7 @@ class TestEmpiricalModel:
         assert cf_kcbs_convex <= (1 - l) * cf_chsh_pr + l * cf_kcbs_rand + tol
     
     def compute_cf_noisy(self):
-        eta = np.random.rand() * 0.5
+        eta = self.generator.random() * 0.5
         
         # Det should have CF 0
         cf_chsh_det = self.em_chsh_det.compute_cf_noisy(solver=SOLVER, eta=eta)["CF"]
@@ -571,11 +571,11 @@ class TestEmpiricalModel:
 
     def test_mul_div_add(self):
         # Creating two random empirical models
-        rand_vect_chsh_1 = np.random.rand(16).reshape(4, 4)
+        rand_vect_chsh_1 = self.generator.random(16).reshape(4, 4)
         rand_vect_chsh_1 /= rand_vect_chsh_1.sum(axis=1, keepdims=True)
         em_chsh_rand_1 = EmpiricalModel(self.ms_chsh, rand_vect_chsh_1)
 
-        rand_vect_chsh_2 = np.random.rand(16).reshape(4, 4)
+        rand_vect_chsh_2 = self.generator.random(16).reshape(4, 4)
         rand_vect_chsh_2 /= rand_vect_chsh_2.sum(axis=1, keepdims=True)
         em_chsh_rand_2 = EmpiricalModel(self.ms_chsh, rand_vect_chsh_2)
 
@@ -608,7 +608,7 @@ class TestEmpiricalModel:
             _ = em_chsh_rand_1 / em_chsh_rand_2
 
         # Convex mixture
-        l = np.random.rand()
+        l = self.generator.random()
         em_chsh_sum = (1 - l) * em_chsh_rand_1 + l * em_chsh_rand_2
         expected_mvector = (1 - l) * rand_vect_chsh_1 + l * rand_vect_chsh_2
         assert (em_chsh_sum.mvector == expected_mvector).all()

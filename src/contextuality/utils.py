@@ -18,7 +18,11 @@ import cvxpy as cp
 import numpy as np
 
 from contextuality.empirical_model import EmpiricalModel
-from contextuality.measurement_scenario import MeasurementScenario
+
+# Setup types
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from contextuality import MeasurementScenario
 
 ReprType = Literal["V", "H", "BOTH"]
 
@@ -39,7 +43,7 @@ def polytope_to_h(D: np.ndarray) -> np.array:
     return H
 
 
-def nc_polytope(MS: MeasurementScenario, representation: ReprType = "V") \
+def nc_polytope(MS: 'MeasurementScenario', representation: ReprType = "V") \
         -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     """
     Polytope for the Non-Contextual set.
@@ -82,7 +86,7 @@ def nc_polytope(MS: MeasurementScenario, representation: ReprType = "V") \
     return D, H
 
 
-def signalling_polytope(MS: MeasurementScenario, include_NS_polytope: bool = True) -> np.ndarray:
+def signalling_polytope(MS: 'MeasurementScenario', include_NS_polytope: bool = True) -> np.ndarray:
     """
     Creates the signalling polytope in V mode. All the outcomes are maximally signalling or no-signalling and
     deterministic.
@@ -119,7 +123,7 @@ def signalling_polytope(MS: MeasurementScenario, include_NS_polytope: bool = Tru
     return D
 
 
-def compatibility_of_marginals_constraints(MS: MeasurementScenario, EM_vector: cp.Variable) -> List:
+def compatibility_of_marginals_constraints(MS: 'MeasurementScenario', EM_vector: cp.Variable) -> List:
     """
     Generate compatibility of marginals constraints on an empirical model vector as a Variable of cvxpy.
 
@@ -226,7 +230,7 @@ def compute_ncf_winter(empirical_model: EmpiricalModel, solver: str = "MOSEK", v
     return {"opt_sol": b.value, "NCF": prob.value, "CF": 1 - prob.value}
 
 
-def compute_max_cf(MS: MeasurementScenario, sigma: float, eta: float, big_m: float = 2, solver: Optional[str] = "MOSEK",
+def compute_max_cf(MS: 'MeasurementScenario', sigma: float, eta: float, big_m: float = 2, solver: Optional[str] = "MOSEK",
                    verbose: Optional[bool] = False) -> Dict[str, Any]:
     """
     LP to find the maximum distance between two empirical models.
@@ -340,7 +344,7 @@ def compute_max_cf(MS: MeasurementScenario, sigma: float, eta: float, big_m: flo
     return {"EmpiricalModel": EmpiricalModel(MS, max_violation_vector), "max_violation": max_violation}
 
 
-def get_bound_winter(MS: MeasurementScenario, lambdas: Optional[np.ndarray] = None,
+def get_bound_winter(MS: 'MeasurementScenario', lambdas: Optional[np.ndarray] = None,
                      bound_type: Optional[str] = "classical",
                      epsilon: Optional[float] = 0,
                      solver: Optional[str] = "MOSEK",
@@ -406,7 +410,7 @@ def get_bound_winter(MS: MeasurementScenario, lambdas: Optional[np.ndarray] = No
     return {"classical_bound": prob.value, "Xi": Xi.value}
 
 
-def get_bound_winter_epsilon(MS: MeasurementScenario, epsilon: float = 0):
+def get_bound_winter_epsilon(MS: 'MeasurementScenario', epsilon: float = 0):
     warnings.warn("This function will be removed in the future.", DeprecationWarning)
     # Very slow, since it makes all the possible assignments.
     O, X, M = MS.O, MS.X, MS.M
