@@ -239,10 +239,10 @@ class MeasurementScenario:
     def nc_polytope(self, representation: ReprType = "V") \
             -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
         """
-        Polytope for the Non-Contextual set.
+        Generates the non-contextual polytope in either V, H or in both representations.
 
-        :param representation: Representation expected as a return, can only be "H", "V" or "BOTH".
-        :return: The NC polytope in the form of a matrix representation H, V or BOTH.
+        :param representation: Representation returned, can only be "H", "V" or "BOTH".
+        :return: The non-contextual polytope in the form of a matrix, or two matrices when the representation is "BOTH".
         """
         X, M, O = self.X, self.M, self.O
         outcomes_assignements = list(itertools.product([0, 1], repeat=len(X)))
@@ -275,10 +275,10 @@ class MeasurementScenario:
     
     def signalling_polytope(self, representation: ReprType = "V") -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
         """
-        Polytope for the signalling set.
+        Generates the signalling polytope in either V, H or in both representations.
 
-        :param representation: Representation expected as a return, can only be "H", "V" or "BOTH".
-        :return: The NC polytope in the form of a matrix representation H, V or BOTH.
+        :param representation: Representation returned, can only be "H", "V" or "BOTH".
+        :return: The signalling polytope in the form of a matrix, or two matrices when the representation is "BOTH".
         """
         O, M = self.O, self.M
 
