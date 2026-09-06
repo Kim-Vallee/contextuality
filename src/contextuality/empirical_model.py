@@ -4,13 +4,9 @@
 #
 # Created at 17/03/2022
 #
-# This code is licensed under the Apache License, Version 2.0. You may
-# obtain a copy of this license in the LICENSE.txt file in the root directory
-# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
-#
-# Any modifications or derivative works of this code must retain this
-# copyright notice, and modified files need to carry a notice indicating
-# that they have been altered from the originals.
+# This code is licensed under the GNU GPLv3 license. You may
+# obtain a copy of this license in the LICENSE file in the root directory
+# of this source tree or at https://www.gnu.org/licenses/gpl-3.0.fr.html#license-text.
 
 import itertools
 from typing import Optional, Iterable, Union, Tuple, List, Dict, Any, Self
@@ -103,19 +99,19 @@ class EmpiricalModel:
         """
         return self.vector.reshape(len(self.measurement_scenario.M), len(self.measurement_scenario.all_outcomes))
 
-    def quantum_realisation(self, rho: ArrayLike, meas: ArrayLike) -> None:
+    def quantum_realisation(self, rho: ArrayLike, pvms: ArrayLike) -> None:
         r"""
         Compute an empirical model/behavior from a provided quantum realization.
 
         :param rho:     The quantum state density matrix.
-        :param meas:    The measurements in an array. The indices are "measurement label", "outcome" to access
+        :param pvms:    The measurements in an array. The indices are "measurement label", "outcome" to access
                         a specific measurement PVM. For instance, meas[0,0] accesses the PVM for measurement
                         with label X[0] and outcome O[0] respectively.
         """
 
         # Get parameters
         self._rho = np.array(rho)
-        self._meas = np.array(meas)
+        self._meas = np.array(pvms)
         O, M = self.measurement_scenario.O, self.measurement_scenario.M
 
         # Compute the empiral model/behavior from quantum realization.
@@ -143,7 +139,7 @@ class EmpiricalModel:
         Example:
 
         >>> from contextuality import MeasurementScenarioImplementations, EmpiricalModel
-        >>> ms = MeasurementScenarioImplementations.KCBS()
+        >>> ms = MeasurementScenarioImplementations.kcbs()
         >>> em = EmpiricalModel(ms, [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0])
         >>> signalling_vars, values_per_context = em.get_signalling_variables()
         >>> print(signalling_vars)
@@ -219,126 +215,69 @@ class EmpiricalModel:
 
         return maximum
 
-    def _compatibility_of_marginals_constraints(self, EM_vector: cp.Variable) -> List:
-        """
-        Generate compatibility of marginals constraints on an empirical model vector as a Variable of cvxpy.
-
-        :param EM_vector: Empirical Model vectorial representation.
-        :type EM_vector: cp.Variable
-        :return: A list of constraints on EM_vector to respect the compatibility of marginals.
-        :rtype: List
-        """
-        O, M = self.measurement_scenario.O, self.measurement_scenario.M
-        outcomes = list(itertools.product(O, repeat=len(M[0])))
-        nb_outcomes = len(outcomes)
-        constraints = []
-        # Compatibility of marginals TODO: improve the loop perf
-        for i, ctx1 in enumerate(M):
-            for j, ctx2 in enumerate(M):
-                if ctx1 == ctx2:
-                    continue
-                # Also counting same elements, useless
-                intersection = np.intersect1d(ctx1, ctx2, return_indices=False)
-                if intersection.size > 0:
-                    # Note the intersection value (is it A0, A1 ...)
-                    intersection_value = int(intersection[0])
-
-                    # Find the position in the context (if we are looking for A1 in A0A1 and in A1A2 then i_ctx1 = 1 and
-                    # j_ctx2 = 0)
-                    i_ctx1 = ctx1.index(intersection_value)
-                    j_ctx2 = ctx2.index(intersection_value)
-
-                    # Note the position of the values to sum
-                    ctx_1_indices: List[List[int]] = [[] for _ in range(len(O))]
-                    ctx_2_indices: List[List[int]] = [[] for _ in range(len(O))]
-                    for k, outcome in enumerate(outcomes):
-                        ctx_1_indices[outcome[i_ctx1]].append(k)
-                        ctx_2_indices[outcome[j_ctx2]].append(k)
-
-                    # Finally get the context and add the constraint
-                    h_NS_ctx1 = EM_vector[i * nb_outcomes: (i + 1) * nb_outcomes]
-                    h_NS_ctx2 = EM_vector[j * nb_outcomes: (j + 1) * nb_outcomes]
-
-                    for ind1, ind2 in zip(ctx_1_indices, ctx_2_indices):
-                        m_ctx1 = cp.Constant(0)
-                        m_ctx2 = cp.Constant(0)
-                        for ind11, ind21 in zip(ind1, ind2):
-                            m_ctx1 += h_NS_ctx1[ind11]
-                            m_ctx2 += h_NS_ctx2[ind21]
-
-                        constraints += [m_ctx1 == m_ctx2]
-        return constraints
-
     def compute_sf(self, solver: str = "MOSEK", verbose: bool = False) -> Dict[str, Any]:
         """
-        Computes the signaling fraction from an empirical model and a MeasurementScenario.
+        Computes the signaling fraction of this empirical model.
 
         :param solver: Solver for cvxpy. Defaults to "MOSEK".
         :param verbose: Whether the solver should verbose. Defaults to False.
-        :return: Signalling and non-signalling fractions
+        :return: Signalling and non-signalling fractions.
         """
 
-        # The idea is to try to describe the empirical model
-        # as a decomposition of no-signaling and signaling
-        # and to maximize the no-signaling fraction which is
-        # very close to the non-contextual fraction.
-        # In other words I assume that the empirical model
-        # is a sum of two hidden variable models, one that
-        # is signaling and one that is not.
-
-        MS = self.measurement_scenario
+        ms = self.measurement_scenario
         ve = self.vector
 
-        # Problem formulation :
-        # Minimize distance (v_e, \lambda * h_NS)
-        # constraints :
-        # h_NS must respect the compatibility of marginals
-        # v_e >= h_NS
-        # \lambda * sum(h_NS[row]) = 1
-        # 0 <= lambda <= 1
+        incidence_matrix = ms.incidence_matrix
+        n = incidence_matrix.shape[1]
+        b = cp.Variable(n)
 
-        O, M = MS.O, MS.M
+        constraints = [incidence_matrix @ b <= ve,
+                       incidence_matrix @ b >= 0]
 
-        outcomes = list(itertools.product(O, repeat=len(M[0])))
-        nb_outcomes = len(outcomes)
-        nb_entries = ve.size
-
-        # em = 1-\sigma h + \sigma h'
-        # em >= (1 - \sigma) h
-
-        h_NS = cp.Variable(nb_entries)
-
-        constraints = [h_NS >= cp.Constant(0)]
-
-        constraints += [ve >= h_NS]
-
-        z = cp.Variable(1, nonneg=True)
-
-        # Forces the normalization with respect to lambda
-        for i in range(0, nb_entries, nb_outcomes):
-            constraints += [cp.sum(h_NS[i: i + nb_outcomes]) == z]
-
-        constraints += self._compatibility_of_marginals_constraints(h_NS)
-
-        prob = cp.Problem(cp.Maximize(z), constraints)
+        prob = cp.Problem(cp.Maximize(np.ones(n).T @ b), constraints)
         prob.solve(solver=solver, verbose=verbose)
 
-        NSF = z.value[0]
-        SF = 1 - NSF
+        SF = 1 - prob.value
+        NSF = prob.value
 
-        return {"SF": SF, "NSF": NSF, "h_NS": EmpiricalModel(MS, h_NS.value)}
+        return {"SF": SF, "NSF": NSF, "opt_sol": b.value}
 
-    def compute_cf(self, eta: float = 0, solver: str = "MOSEK", verbose: bool = False) -> Dict[str, float]:
+    def compute_cf(self, solver: str = "MOSEK", verbose: bool = False):
         """
-        Compute the Non-Contextual Fraction (NCF) of an empirical model.
+        Compute the Non-Contextual Fraction (NCF) of this empirical model.
 
-        :param eta: Value of the non-determinism allowed.
+        :param solver: The solver used for cvxpy. Defaults to "MOSEK".
+        :param verbose: Whether the solver should verbose. Defaults to False.
+        :return: The NCF, CF and the optimal description by NC model.
+        """
+        ms = self.measurement_scenario
+        ve = self.vector
+
+        incidence_matrix = ms.incidence_matrix
+        
+        n = len(incidence_matrix[0])
+
+        b = cp.Variable(n, nonneg=True)
+
+        constraints = [incidence_matrix @ b <= ve]
+
+        prob = cp.Problem(cp.Maximize(np.ones(n).T @ b), constraints)
+        prob.solve(solver=solver, verbose=verbose)
+
+        return {"opt_sol": b.value, "NCF": prob.value, "CF": 1 - prob.value}
+
+
+    def compute_cf_noisy(self, eta: float = 0, solver: str = "MOSEK", verbose: bool = False) -> Dict[str, float]:
+        """
+        Compute the Non-Contextual Fraction (NCF) of this empirical model, considering HVM with eta indeterminism.
+
+        :param eta: Value of indeterminism allowed.
         :param solver: The solver used for cvxpy. Defaults to "MOSEK".
         :param verbose: Whether the solver should verbose. Defaults to False.
         :return: The NCF, CF and the optimal description by NC model.
         """
         if eta == 0:
-            return self._compute_cf_deterministic(solver, verbose)
+            return self.compute_cf(solver, verbose)
 
         ms = self.measurement_scenario
         ve = self.vector
@@ -362,25 +301,48 @@ class EmpiricalModel:
         return {"opt_sol_nc": b_nc.value, "opt_sol_s": b.value, "NCF": prob.value, "CF": 1 - prob.value,
                 "behaviour": incidence_matrix_signalling @ b.value + incidence_matrix @ b_nc.value}
 
-    def _compute_cf_deterministic(self, solver: Union[str, None] = "MOSEK", verbose: bool = False):
+
+    def compute_dual_cf(self, solver: str = "MOSEK", verbose: bool = False) -> Dict[str, float]:
+        """Compute the dual program of the contextual fraction
+
+        :param solver: The solver used for cvxpy. Defaults to "MOSEK".
+        :param verbose: Whether the solver should verbose. Defaults to False.
+        :return: A dictionary with the optimal solution and 'a', the coefficients of the closest inequality
+        
+        Example:
+        
+        >>> from contextuality import MeasurementScenarioImplementations, EmpiricalModel
+        >>> ms = MeasurementScenarioImplementations.chsh()
+        >>> quantum_em = EmpiricalModel(
+                ms_chsh,
+                [
+                    [0.4267767, 0.0732233, 0.0732233, 0.4267767],
+                    [0.4267767, 0.0732233, 0.0732233, 0.4267767],
+                    [0.4267767, 0.0732233, 0.0732233, 0.4267767],
+                    [0.0732233, 0.4267767, 0.4267767, 0.0732233],
+                ],
+            )
+        >>> coefficients = quantum_em.compute_dual_cf()["a"] 
+        """
         ms = self.measurement_scenario
         ve = self.vector
 
-        outcomes_global = ms.outcomes_global
+        # NOTE: formula valid only if the context have the same length
+        m = len(ms.all_outcomes) * len(ms.M)
 
-        n = len(outcomes_global)
-
-        b = cp.Variable(n, nonneg=True)
+        y = cp.Variable(m, nonneg=True)
 
         incidence_matrix = ms.incidence_matrix
 
-        constraints = [incidence_matrix @ b <= ve]
+        constraints = [incidence_matrix.T @ y >= 1]
 
-        prob = cp.Problem(cp.Maximize(np.ones(n).T @ b), constraints)
+        prob = cp.Problem(cp.Minimize(y @ ve), constraints)
         prob.solve(solver=solver, verbose=verbose)
 
-        return {"opt_sol": b.value, "NCF": prob.value, "CF": 1 - prob.value}
-
+        a = (1 / len(ms.M)) * np.ones(m) - y
+        
+        return {"opt_sol": y.value, "a": a.value}
+    
     def __mul__(self, other: Union[int, float]) -> "EmpiricalModel":
         """
         Define the multiplication with a float or int.
@@ -422,13 +384,16 @@ class EmpiricalModel:
 
     def __str__(self):
         vector_print = ""
-        for row in self.mvector:
-            vector_print += "\t"
-            for v in row:
-                vector_print += f"{v:.2f} "
-            vector_print += "\n"
+        try:
+            for row in self.mvector:
+                vector_print += "\t"
+                for v in row:
+                    vector_print += f"{v:.2f} "
+                vector_print += "\n"
 
-        return f"EmpiricalModel({self.measurement_scenario}\n{vector_print})"
+            return f"EmpiricalModel({self.measurement_scenario}\n{vector_print})"
+        except AttributeError:
+            return f"EmpiricalModel({self.measurement_scenario})"
 
     def __repr__(self):
         return self.__str__()
