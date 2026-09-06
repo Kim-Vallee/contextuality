@@ -19,6 +19,11 @@ import numpy as np
 
 from contextuality.empirical_model import EmpiricalModel
 
+# Setup types
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from contextuality import MeasurementScenario
+
 ReprType = Literal["V", "H", "BOTH"]
 
 __cache_NC_polytope_H = {}

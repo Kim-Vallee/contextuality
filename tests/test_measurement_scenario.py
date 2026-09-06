@@ -125,6 +125,35 @@ class TestMeasurementScenario:
 
         assert self.MS_RANDOM.all_outcomes == list(itertools.product(self.O, repeat=len(self.MS_RANDOM.M[0])))
 
+    def test_nc_polytope(self):
+        v_repr = self.MS_CHSH.nc_polytope()
+
+        assert v_repr.shape == (16, 16)
+        assert np.isin(v_repr, [0, 1]).all()
+        assert (v_repr.sum(axis=1) == len(self.MS_CHSH.M)).all()
+        assert len(np.unique(v_repr, axis=0)) == len(v_repr)
+
+        h_repr = self.MS_CHSH.nc_polytope("H")
+        both_v_repr, both_h_repr = self.MS_CHSH.nc_polytope("BOTH")
+
+        assert np.array_equal(both_v_repr, v_repr)
+        assert np.array_equal(both_h_repr, h_repr)
+
+    def test_signalling_polytope(self):
+        # For CHSH
+        v_repr = self.MS_CHSH.signalling_polytope()
+
+        assert v_repr.shape == (256, 16)
+        assert np.isin(v_repr, [0, 1]).all()
+        assert (v_repr.sum(axis=1) == len(self.MS_CHSH.M)).all()
+        assert len(np.unique(v_repr, axis=0)) == len(v_repr)
+        
+        h_repr = self.MS_CHSH.signalling_polytope("H")
+        both_v_repr, both_h_repr = self.MS_CHSH.signalling_polytope("BOTH")
+
+        assert np.array_equal(both_v_repr, v_repr)
+        assert np.array_equal(both_h_repr, h_repr)
+
     def test_generate_deterministic(self):
         chsh_deterministic_model = self.MS_CHSH.generate_deterministic([0, 0, 1, 2])
 

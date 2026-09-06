@@ -13,15 +13,12 @@
 import abc
 import itertools
 import warnings
-from typing import List, Literal, Tuple, Iterable, Union, Dict
-
+import cdd
 import numpy as np
-from matplotlib import pyplot as plt
+from typing import List, Literal, Tuple, Iterable, Union, Dict
 from numpy import ndarray
 from sympy import Symbol, Expr, sympify, Basic
 from sympy.parsing.sympy_parser import parse_expr
-
-from contextuality.utils import polytope_to_h
 
 int_or_symbol = Union[int, Symbol, str]
 
@@ -211,6 +208,20 @@ class MeasurementScenario:
         [(0, 0), (0, 1), (1, 0), (1, 1)]
         """
         return self._all_outcomes
+    
+    @staticmethod
+    def __polytope_v_to_h(v_repr: np.ndarray) -> np.ndarray:
+        """
+        Converts a polytope in V representation to H representation.
+
+        :param v_repr: The polytope in V representation.
+        :return: The polytope in H representation.
+        """
+        mat = cdd.matrix_from_array(v_repr, rep_type=cdd.RepType.GENERATOR)
+        poly = cdd.polyhedron_from_matrix(mat)
+        ineqs = cdd.copy_inequalities(poly)
+        h_repr = np.array(ineqs.array)
+        return h_repr
 
     def generate_deterministic(self, positions: Iterable[int]) -> ndarray:
         """
@@ -247,16 +258,16 @@ class MeasurementScenario:
                         d.append(0)
             v_repr_nc.append(d)
 
-        v_repr_nc = np.array(D)
+        v_repr_nc = np.array(v_repr_nc)
         if representation == "V":
             return v_repr_nc
 
         self._cache_nc_polytope_h[self] = self._cache_nc_polytope_h.get(self, None)
         if self._cache_nc_polytope_h[self] is None:
-            self._cache_nc_polytope_h[self] = polytope_to_h(v_repr_nc)
+            self._cache_nc_polytope_h[self] = self.__polytope_v_to_h(v_repr_nc)
 
         h_repr_nc = self._cache_nc_polytope_h[self]
-        if representation == "h_repr_nc":
+        if representation == "H":
             return h_repr_nc
 
         return v_repr_nc, h_repr_nc
@@ -275,36 +286,38 @@ class MeasurementScenario:
             for positions in map(set, itertools.combinations(range(length), length - 1)):
                 yield ''.join('10'[i in positions] for i in range(length))
 
-        v_repr_s = []
+        v_repr_s = None
         for context in M:
             ctx_outcomes = list(itertools.product(O, repeat=len(context)))
             permutations = list(permutations_without_rep(len(ctx_outcomes)))
-            v_repr_s = [previous_permutations + new_permutation for previous_permutations in v_repr_s for new_permutation in permutations]
+            if v_repr_s is None:
+                v_repr_s = permutations
+            else:
+                v_repr_s = [previous_permutations + new_permutation
+                             for previous_permutations in v_repr_s
+                             for new_permutation in permutations]
 
-        v_repr_s = np.array([[int(i) for i in list(d)] for d in v_repr_s])
-
-        v_repr_ns = self.nc_polytope()
-        v_repr_full = np.array([row for row in v_repr_s if not (row == v_repr_ns).all(axis=1).any()])
+        v_repr_s = np.array([[int(i) for i in d] for d in v_repr_s])
 
         if representation == "V":
-            return v_repr_full
+            return v_repr_s
         
         self._cache_s_polytope_h[self] = self._cache_s_polytope_h.get(self, None)
         if self._cache_s_polytope_h[self] is None:
-            self._cache_s_polytope_h[self] = polytope_to_h(v_repr_full)
+            self._cache_s_polytope_h[self] = self.__polytope_v_to_h(v_repr_s)
 
-        h_repr_full = self._cache_s_polytope_h[self]
+        h_repr_s = self._cache_s_polytope_h[self]
         if representation == "H":
-            return h_repr_full
+            return h_repr_s
 
-        return v_repr_full, h_repr_full
+        return v_repr_s, h_repr_s
     
     def __hash__(self):
-        X_hash = ",".join([str(x) for x in sorted(self.X)])
-        M_hash = ",".join(["".join([str(o) for o in ctx]) for ctx in sorted(self.M)])
-        O_hash = ",".join([str(o) for o in sorted(self.O)])
+        x_hash = ",".join(sorted(map(str, self.X)))
+        m_hash = ",".join(sorted(map(str, self.M)))
+        o_hash = ",".join(sorted(map(str, self.O)))
         
-        return hash((X_hash, M_hash, O_hash))
+        return hash((x_hash, m_hash, o_hash))
     
     def __eq__(self, other: 'MeasurementScenario') -> bool:
         """
@@ -317,16 +330,7 @@ class MeasurementScenario:
         if not isinstance(other, MeasurementScenario):
             raise ValueError(f"The operand is not of the right type : {type(other)}")
 
-        # Handles the case where symbols are used. Does not affect integers sorting.
-        this_X_str = [str(x) for x in self.X]
-        other_X_str = [str(x) for x in other.X]
-
-        this_M_str = [[str(x) for x in m] for m in self.M]
-        other_M_str = [[str(x) for x in m] for m in other.M]
-
-        return sorted(this_X_str) == sorted(other_X_str) and \
-            sorted(self.O) == sorted(other.O) and \
-            sorted(this_M_str) == sorted(other_M_str)
+        return self.__hash__() == other.__hash__()
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -349,11 +353,6 @@ class MeasurementScenarioImplementations(abc.ABC):
         return MeasurementScenario(X, M, O)
 
     @staticmethod
-    def CHSH() -> MeasurementScenario:
-        warnings.warn("This method is deprecated. Please use MeasurementScenarioImplementations.chsh() instead.", DeprecationWarning)
-        return MeasurementScenarioImplementations.chsh()
-
-    @staticmethod
     def kcbs() -> MeasurementScenario:
         """ Generates the KCBS MeasurementScenario class. """
         X = list(range(5))
@@ -362,22 +361,12 @@ class MeasurementScenarioImplementations(abc.ABC):
         return MeasurementScenario(X, M, O)
 
     @staticmethod
-    def KCBS() -> MeasurementScenario:
-        warnings.warn("This method is deprecated. Please use MeasurementScenarioImplementations.kcbs() instead.", DeprecationWarning)
-        return MeasurementScenarioImplementations.kcbs()
-
-    @staticmethod
     def peres_mermin() -> MeasurementScenario:
         """ Generates the Peres Mermin MeasurementScenario class. """
         X = list(range(9))
         M = [X[i:i + 3] for i in range(0, 9, 3)] + [[X[i]] + [X[i + 3]] + [X[i + 6]] for i in range(3)]
         O = [0, 1]
         return MeasurementScenario(X, M, O)
-
-    @staticmethod
-    def PeresMermin() -> MeasurementScenario:
-        warnings.warn("This method is deprecated. Please use MeasurementScenarioImplementations.peres_mermin() instead.", DeprecationWarning)
-        return MeasurementScenarioImplementations.peres_mermin()
 
 
 class GeneralizedMeasurementScenario(MeasurementScenario):
