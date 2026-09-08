@@ -20,18 +20,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
         with:
           persist-credentials: false
           
       - name: install needed packages
         run: sudo apt install libcdd-dev libgmp-dev
 
-      - name: install needed packages
-        run: sudo apt install libcdd-dev libgmp-dev
-
       - name: Build and publish to pypi
         uses: JRubics/poetry-publish@v2.1
         with:
-          pypi_token: ${{ secrets.PYPI_TOKEN }}
+          pypi_token: ${{ secrets.PYPI_TOKEN }}
           extra_build_dependency_packages: "libcdd-dev libgmp-dev"
+          plugins: "poetry-dynamic-versioning[plugin]"
