@@ -6,7 +6,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Publish Contextuality package on PyPi
+name: Publish Contextuality package to PyPi
 
 on:
   release:
@@ -16,25 +16,61 @@ permissions:
   contents: read
 
 jobs:
-  publish:
+  build:
+    name: Build package
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          persist-credentials: false
           fetch-depth: 0
+          persist-credentials: false
 
-      - name: Mark repository as safe
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          
-      - name: install needed packages
-        run: sudo apt install libcdd-dev libgmp-dev
-
-      - name: Build and publish to pypi
-        uses: JRubics/poetry-publish@v2.1
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          pypi_token: ${{ secrets.PYPI_TOKEN }}
-          extra_build_dependency_packages: "libcdd-dev libgmp-dev"
-          plugins: "poetry-dynamic-versioning[plugin]"
+          python-version: "3.x"
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y libcdd-dev libgmp-dev
+
+      - name: Install Poetry dynamic versioning
+        run: poetry self add "poetry-dynamic-versioning[plugin]"
+
+      - name: Build package
+        run: poetry build
+
+      - name: Upload distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-dists
+          path: dist/
+
+
+  publish:
+    name: Publish to PyPi
+    needs: build
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+    
+    environment:
+      name: pypi
+      url: https://pypi.org/p/contextuality/
+
+    steps:
+      - name: Download distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: release-dists
+          path: dist/
+      
+      - name: Publish distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
