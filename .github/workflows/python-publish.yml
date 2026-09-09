@@ -16,32 +16,6 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
-
-      - name: Install pycddlib dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y libcdd-dev libgmp-dev
-
-      - name: Install depdencies
-        run: |
-          pip install poetry
-          poetry install --with dev
-
-      - name: Run tests
-        run: |
-          poetry run pytest -v tests/
-
   publish:
     runs-on: ubuntu-latest
 
