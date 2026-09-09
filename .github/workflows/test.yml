@@ -13,6 +13,8 @@ on:
       - '**.py'
       - '**/pyproject.toml'
       - '.github/workflows/**.yml'
+  release:
+    types: [published]
 
 jobs:
   test:
